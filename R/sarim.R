@@ -20,13 +20,13 @@
 #'              number of the first + 10, in the third iteration it use the number of the second + 10; 
 #'              for saving memory.
 #' @param thr threshold, when the Lanczos-algorithm or conjugate gradient-algorithm should break.
-#' 
+#' @import Matrix parallel
 #' @export
+#' @useDynLib Sarim
 sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, burnin = 100L,
                   family = "gaussian", link = "identity",
                   sigma = 0.1, sigma_a = 0.0001, sigma_b = 0.0001, Ntrials = 1L,
                   m = 250L, thr = 0.0001) {
-    require(Matrix)
     mf <- stats::model.frame(formula = formula, data = data)
     y <- as.numeric(stats::model.response(mf))
     
@@ -180,17 +180,33 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                          "lanzcos_iterations" = out$lanzcos_iterations)
     }
     if (family != "gaussian") {
-        out <- Sarim::sarim_mcmc(y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
-                                 ka_start = kappa_startList, ka_values = kappaList,
-                                 solver = solverList, lin_constraint = constraintList,
-                                 family = family, link = link,
-                                 nIter = nIter, Ntrials = Ntrials,
-                                 m = m, thr = thr)
-        
-        list_out <- list("coef_results" = out$coef_results,
-                         "kappa_results" = out$kappa_results,
-                         "accept_rate" = out$accept_rate,
-                         "lanzcos_iterations" = out$lanzcos_iterations)
+      # out <- Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
+      #                          ka_start = kappa_startList, ka_values = kappaList,
+      #                          solver = solverList, lin_constraint = constraintList,
+      #                          family = family, link = link,
+      #                          nIter = nIter, Ntrials = Ntrials,
+      #                          m = m, thr = thr)
+      out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaList,
+                                kappa_startList, ka_values,
+                                solverList, lin_constraint,
+                                family, link,
+                                nIter, Ntrials,
+                                m, thr){
+                                Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
+                                          ka_start = kappa_startList, ka_values = kappaList,
+                                          solver = solverList, lin_constraint = constraintList,
+                                          family = family, link = link,
+                                          nIter = nIter, Ntrials = Ntrials,
+                                          m = m, thr = thr)},
+                                y, Z, K, K_rk, gammaList, kappa_startList, kappaList,
+                                solverList, constraintList,
+                                family, link, nIter, Ntrials,
+                                m, thr, mc.cores = 4)
+         list_out <- out               
+        #list_out <- list("coef_results" = out$coef_results,
+        #                 "kappa_results" = out$kappa_results,
+        #                 "accept_rate" = out$accept_rate,
+        #                 "lanzcos_iterations" = out$lanzcos_iterations)
     }
     
     
