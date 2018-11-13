@@ -36,23 +36,25 @@
 #include <RcppEigen.h>
 #include <random>
 // [[Rcpp::depends(dqrng)]]
-#include <dqrng_distribution.h>
+//#include <dqrng_distribution.h>
+// [[Rcpp::depends(dqrng)]]
+#include <dqrng.h>
 #include "misc.hpp"
 
-class SplitMix : public dqrng::random_64bit_generator {
-public:
-  SplitMix (result_type seed) : state(seed) {};
-  result_type operator() () {
-    result_type z = (state += 0x9e3779b97f4a7c15ULL);
-    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
-    z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
-    return z ^ (z >> 31);
-  }
-  void seed(result_type seed) {state = seed;}
-  
-private:
-  result_type state;
-};
+// class SplitMix : public dqrng::random_64bit_generator {
+// public:
+//   SplitMix (result_type seed) : state(seed) {};
+//   result_type operator() () {
+//     result_type z = (state += 0x9e3779b97f4a7c15ULL);
+//     z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+//     z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+//     return z ^ (z >> 31);
+//   }
+//   void seed(result_type seed) {state = seed;}
+//   
+// private:
+//   result_type state;
+// };
 
 // function to calculate the incomplete cholesky decomposition, return a sparse matrix
 // need for lanczos algorithm
@@ -97,18 +99,27 @@ Eigen::VectorXd random_gauss (const int & n)
     }
     return e;
 */
-  Rcpp::NumericVector f(n);
-  auto rng = dqrng::generator<SplitMix>(42);
-    dqrng::normal_distribution dist(0.0, 1.0);
-    f = dqrng::generate<dqrng::normal_distribution, Rcpp::NumericVector>(n, rng, dist);
-    Eigen::VectorXd e(n);
-    
-    for (int i = 0; i < n; ++i)
+  // Rcpp::NumericVector f(n);
+  // auto rng = dqrng::generator<SplitMix>(42);
+  //   dqrng::normal_distribution dist(0.0, 1.0);
+  //   f = dqrng::generate<dqrng::normal_distribution, Rcpp::NumericVector>(n, rng, dist);
+  //   Eigen::VectorXd e(n);
+  //   
+  //   for (int i = 0; i < n; ++i)
+  //   {
+  //     e(i) = f(i);
+  //   }
+  
+  Eigen::VectorXd e(n);
+  
+  dqrng::dqRNGkind("Xoroshiro128+");
+  dqrng::dqset_seed(42);
+  Rcpp::NumericVector e0 = dqrng::dqrnorm(n,0.0,1.0);
+  for (int i = 0; i < n; ++i)
     {
-      e(i) = f(i);
+         e(i) = e0(i);
     }
-     return e;
-    
+  return e;
 };
 
 

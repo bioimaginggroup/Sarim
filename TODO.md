@@ -3,6 +3,7 @@
 ## Parallelisierung
 
 * rcppparallel, mclapply oder openmpi?
+* Testen mit größeren Daten (sim_poisson etc)
 
 ## Diagnostik
 
