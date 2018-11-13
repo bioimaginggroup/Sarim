@@ -4,8 +4,9 @@
 \alias{sarim_gibbs}
 \title{Gibbs sampler for use in sarim()-function}
 \usage{
-sarim_gibbs(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint,
-  sigma, sigma_values, nIter, m, thr, display_progress = TRUE)
+sarim_gibbs(y, Z, K, K_rank, gamma, ka_start, ka_values, solver,
+  lin_constraint, sigma, sigma_values, nIter, m, thr,
+  display_progress = TRUE)
 }
 \arguments{
 \item{y}{Response variable, given as a vector, use as.numeric() if error occur.}

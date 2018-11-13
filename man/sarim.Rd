@@ -5,9 +5,9 @@
 \title{Generate the structure/penalty matrix for sarim formulae}
 \usage{
 sarim(formula, data = list(), intercept = "FALSE", nIter = 1000L,
-  burnin = 100L, family = "gaussian", link = "identity", sigma = 0.1,
-  sigma_a = 1e-04, sigma_b = 1e-04, Ntrials = 1L, m = 250L,
-  thr = 1e-04)
+  burnin = 100L, family = "gaussian", link = "identity",
+  sigma = 0.1, sigma_a = 1e-04, sigma_b = 1e-04, Ntrials = 1L,
+  m = 250L, thr = 1e-04)
 }
 \arguments{
 \item{formula}{usual formula, y ~ x1 + sx(x2), be aware an intercept can only be
