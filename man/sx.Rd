@@ -5,8 +5,8 @@
 \title{Defining smooth in sarim formulae}
 \usage{
 sx(x = x, knots = 5, penalty = "rw2", degree = 3, solver = "rue",
-  ka_start = 1, ka_a = 1, ka_b = 1e-04, linear_constraint = "FALSE",
-  gamma = NULL, Z = NULL, K = NULL)
+  ka_start = 1, ka_a = 1, ka_b = 1e-04,
+  linear_constraint = "FALSE", gamma = NULL, Z = NULL, K = NULL)
 }
 \arguments{
 \item{x}{covariates to be smooth, similar to bs form spline package.}

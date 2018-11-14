@@ -189,6 +189,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
         
         list_out <- list("coef_results" = out$coef_results,
                          "kappa_results" = out$kappa_results,
+                         "kappa_mean" = out$kappa_mean,
                          "accept_rate" = out$accept_rate,
                          "lanzcos_iterations" = out$lanzcos_iterations)
     }
