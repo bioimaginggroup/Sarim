@@ -116,6 +116,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     Rcpp::List iterative_sampling(p);   // list for iterative samples in lanczos-algo
     Rcpp::List kappa_results(p);        // list for kappa values
     Rcpp::List m_iter(p);               // list for max-lanczos-iterations
+
+    Rcpp::NumericVector kappa_mean(p);        // mean for kappa values
     
     for (int i = 0; i < p; ++i) {
         // gamma matrix 
@@ -130,6 +132,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         Eigen::VectorXd kappa_results_tmp(nIter + 1);
         kappa_results_tmp(0) = kappa_tmp;
         kappa_results[i] = kappa_results_tmp;
+        
+        kappa_mean[i]=0.0;
         
         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
         mu_results[i] = 0 * gamma_tmp;
@@ -422,6 +426,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                 0.5 * (gamma_matrix.col(n_mcmc)).transpose() * K_k * gamma_matrix.col(n_mcmc);
             ka_vector.row(n_mcmc) = random_gamma(1, ka_alpha, 1/ka_beta);
             kappa_results[k] = ka_vector;
+            
+            kappa_mean[k] += (kappa_results[k]-kappa_mean[k])/n_mcmc;
         };
         
     };
