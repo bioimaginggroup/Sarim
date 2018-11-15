@@ -31,7 +31,7 @@ scalefun <- function(z) {
 }
 
 # number of pixels and generate "picture" with scaling form [-0.5, 0.5]
-nx <- 20
+nx <- 12
 x <- seq(1, nx) 
 mat <- data.frame("x" = rep(x, each = length(x)), "y" = rep(x, length(x)))
 im1 <- matrix(f1(mat$x, mat$y, nx, nx), nrow = length(x))
@@ -51,7 +51,7 @@ filled.contour(x = x, y = x, z = im3, nlevels = 40,
                color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
 
 # generate z values
-m <- 100
+m <- 50
 set.seed(042018)
 z1 <- runif(m, -1, 1)
 z2 <- runif(m, -1, 1)
@@ -97,7 +97,7 @@ K3 <- as(kronecker(Ps, Is) + kronecker(Is, Ps), "dgCMatrix")
 df <- data.frame("y" = y)
 
 
-start.time <- Sys.time()
+system.time({
 mod_poisson <- sarim(y ~ sx(Z = Z1, K = K1, penalty = "gmrf", solver = "lanczos", 
                          ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
                       sx(Z = Z2, K = K2, penalty = "gmrf", solver = "lanczos", 
@@ -109,56 +109,22 @@ mod_poisson <- sarim(y ~ sx(Z = Z1, K = K1, penalty = "gmrf", solver = "lanczos"
                       sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
                          ka_start = 50, ka_a = 1, ka_b = 0.00005), 
                   family = "poisson", link = "log",
-                  data = df, nIter = 3500, intercept = "FALSE") 
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-time.taken
+                  data = df, nIter = 350, burnin=50, intercept = "FALSE") 
+})
 #Time difference of 1.488806 hours
+n=350
+mean<-unlist(mod_poisson$kappa_mean)
+unlist(parallel::mclapply(mod_poisson$kappa_results,function(x)mean(log(x[-(1:51)]))))
+var<-unlist(mod_poisson$kappa_mean2)/(n-1)
+unlist(parallel::mclapply(mod_poisson$kappa_results,function(x)var(log(x[-(1:51)]))))
+skew<-sqrt(n)*unlist(mod_poisson$kappa_mean3)/unlist(mod_poisson$kappa_mean2)^(1.5)
 
-# save results for later inspection
-setwd("~/Schreibtisch/Master/C++/Abgabe/simulation_poisson/")
-saveRDS(mod_poisson, "simulation_poisson_output.rds")
-#mod_poisson <- readRDS("simulation_poisson_output.rds")
+k<-1
+#cp <- list(mean=mean[k], var.cov=array(var[k], c(1,1)), gamma1=skew[k])
+#dp <- sn::cp2dp(cp, "SN")
+#d<-x<-seq(0,50,by=0.1)
+#for (i in 1:length(d))d[i]<-dmsn(x[i],dp=dp)
+plot(density(mod_poisson$kappa_results[[k]][-(1:51)]))
+#lines(x,d,col="blue")
+lines(seq(0,50,by=0.1),dlnorm(seq(0,50,by=0.1),mean[k],var[k]))
 
-
-################################################################################
-# take a look at the results
-mod_poisson$accept_rate
-mod_poisson$lanzcos_iterations
-
-
-ga1 <- apply(mod_poisson$coef_results[[1]][, 500:3501], 1, FUN = mean)
-gamat1 <- matrix(ga1, nrow = nx, byrow = TRUE)
-filled.contour(x = x, y = x, z = gamat1, nlevels = 40, 
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu"))))
-gadif1 <- gamat1 - im1
-filled.contour(x = x, y = x, z = gadif1, nlevels = 40, zlim = c(-0.5, 0.5),
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu"))))
-
-
-ga2 <- apply(mod_poisson$coef_results[[2]][, 500:3501], 1, FUN = mean)
-gamat2 <- matrix(ga2, nrow = nx, byrow = TRUE)
-filled.contour(x = x, y = x, z = gamat2, nlevels = 40, 
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu"))))
-gadif2 <- gamat2 - im2
-filled.contour(x = x, y = x, z = gadif2, nlevels = 40, zlim = c(-0.5, 0.5),
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu"))))
-
-
-ga3 <- apply(mod_poisson$coef_results[[3]][, 500:3501], 1, FUN = mean)
-gamat3 <- matrix(ga3, nrow = nx, byrow = TRUE)
-filled.contour(x = x, y = x, z = gamat3, nlevels = 40, 
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu"))))
-gadif3 <- gamat3 - im3
-filled.contour(x = x, y = x, z = gadif3, nlevels = 40, zlim = c(-0.5, 0.5),
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu"))))
-
-
-hist(mod_poisson$coef_results[[4]][500:3501], breaks = 50)
-ga4 <- mean(mod_poisson$coef_results[[4]][500:1001])
-ga4
-
-
-hist(mod_poisson$coef_results[[5]][500:3501], breaks = 50)
-ga5 <- mean(mod_poisson$coef_results[[5]][500:3501])
-ga5

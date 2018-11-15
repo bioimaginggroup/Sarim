@@ -68,6 +68,7 @@
 //'          family = "binomial", please choose link = "logit" or if family = "poisson", 
 //'          please choose link = "log". Currently no other link function is present.
 //' @param nIter Number of iterations for MCMC-algorithm
+//' @param burnin Number of iterations for burnin
 //' @param Ntrials Number of trails, only interesting for binomial distribution
 //' @param m Number of maximal Lanczos-iterations
 //' @param thr threshold when the Lanczos-algorithm or conjugate gradient-algorithm should stop
@@ -93,13 +94,14 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                       const Rcpp::String & link,
                       const double & Ntrials,
                       const int & nIter,
+                      const int & burnin,
                       const int & m,
                       const double & thr,
                       const bool & display_progress = true) {
     
     
     // display progress bar
-    Progress pro(nIter, display_progress);
+    Progress pro(nIter+burnin, display_progress);
     
     // number of covariates (p), get from R:List Z
     int p = Z.size();
@@ -118,24 +120,28 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     Rcpp::List m_iter(p);               // list for max-lanczos-iterations
 
     Rcpp::List kappa_mean(p);        // mean for kappa values
+    Rcpp::List kappa_mean2(p);        // mean for kappa values
+    Rcpp::List kappa_mean3(p);        // mean for kappa values
     
     for (int i = 0; i < p; ++i) {
         // gamma matrix 
         Eigen::VectorXd gamma_tmp = gamma(i);
         int k_size = gamma_tmp.size();
-        Eigen::MatrixXd gamma_results = Eigen::MatrixXd::Zero(k_size, nIter + 1);
+        Eigen::MatrixXd gamma_results = Eigen::MatrixXd::Zero(k_size, burnin + nIter + 1);
         gamma_results.col(0) = gamma_tmp;
         coef_results[i] = gamma_results;
         
         // kappa-value vector
         double kappa_tmp = ka_start(i);
-        Eigen::VectorXd kappa_results_tmp(nIter + 1);
+        Eigen::VectorXd kappa_results_tmp(burnin + nIter + 1);
         kappa_results_tmp(0) = kappa_tmp;
         kappa_results[i] = kappa_results_tmp;
         
         Eigen::VectorXd kappa_mean_tmp(1);
         kappa_mean_tmp(0) = 0.0;
         kappa_mean[i] = kappa_mean_tmp;
+        kappa_mean2[i] = kappa_mean_tmp;
+        kappa_mean3[i] = kappa_mean_tmp;
         
         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
         mu_results[i] = 0 * gamma_tmp;
@@ -144,7 +150,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         v_history[i] = 0 * gamma_tmp;
         
         // number of iterations in lanczos-algo
-        iterative_sampling[i] = Eigen::VectorXd::Zero(nIter);
+        iterative_sampling[i] = Eigen::VectorXd::Zero(nIter+burnin);
         
         // starting value for lanczos-algo
         m_iter[i] = m;
@@ -271,9 +277,9 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     
     ////////////////////////////////////////////////////////////////////////////
     // ITERATION
-    // loop for number of iterations "nIter" 
+    // loop for number of iterations "nIter"+"burnin" 
     // C++ begin in 0 !!!   important for loops
-    for (int n_mcmc = 1; n_mcmc <= nIter; ++n_mcmc) {
+    for (int n_mcmc = 1; n_mcmc <= (nIter+burnin); ++n_mcmc) {
         // if (Progress::check_abort() )
         //     return -1.0;
         pro.increment();
@@ -407,10 +413,12 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                 coef_results[k] = gamma_matrix;
                 mu_results[k] = mu_tmp;
                 eta = eta_tmp_proposal;   
-                // increase accept
+                if (n_mcmc>burnin){
+                  // increase accept
                 int accept = ac_list(k);
                 accept += 1;
                 ac_list[k] = accept;
+                }
                 
             } else {
                 gamma_matrix.col(n_mcmc) = gamma_current;
@@ -430,13 +438,38 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             ka_vector.row(n_mcmc) = random_gamma(1, ka_alpha, 1/ka_beta);
             kappa_results[k] = ka_vector;
             
-            Eigen::VectorXd kappa_tmp(1);
-            kappa_tmp = ka_vector.row(n_mcmc);
-            Eigen::VectorXd kappa_mean_tmp;
-            kappa_mean_tmp = kappa_mean[k];
-            kappa_tmp(0) = (kappa_tmp(0)-kappa_mean_tmp(0))/n_mcmc;
-            kappa_mean_tmp(0) += kappa_tmp(0);
-              kappa_mean[k] = kappa_mean_tmp;
+            if (n_mcmc>burnin)
+            {
+              Eigen::VectorXd delta_tmp(1);
+              Eigen::VectorXd delta_n_tmp(1);
+            //Eigen::VectorXd delta_n2_tmp(1);
+              Eigen::VectorXd kappa_tmp(1);
+              Eigen::VectorXd kappa_mean_tmp(1);
+              Eigen::VectorXd kappa_mean3_tmp(1);
+              Eigen::VectorXd kappa_mean2_tmp(1);
+              Eigen::VectorXd kappa_mean_old(1);
+              Eigen::VectorXd kappa_mean2_old(1);
+              Eigen::VectorXd kappa_mean3_old(1);
+              double n=n_mcmc-burnin;
+              kappa_tmp = ka_vector.row(n_mcmc);
+//              kappa_tmp = kappa_tmp.log();
+              kappa_mean_old = kappa_mean[k];
+              kappa_mean2_old = kappa_mean2[k];
+              kappa_mean3_old = kappa_mean3[k];
+            
+            // source: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics
+              delta_tmp(0) = kappa_tmp(0) - kappa_mean_old(0);   //  delta = x - mean
+              delta_n_tmp(0) = delta_tmp(0)/n;              //  delta_n = delta / n
+            //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
+              kappa_mean2_tmp(0) = delta_tmp(0) * delta_n_tmp(0) * (n-1); // term1 = delta * delta_n * n1
+              kappa_mean_tmp(0) = kappa_mean_old(0) + delta_n_tmp(0); // mean = mean + delta_n
+              kappa_mean3_tmp(0) = kappa_mean3_old(0) + kappa_mean2_tmp(0) * delta_n_tmp(0) * (n-2) - 3 * delta_n_tmp(0) * kappa_mean2_old(0); // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
+              kappa_mean2_tmp(0) = kappa_mean2_tmp(0) + kappa_mean2_old(0); // M2 = M2 + term1
+            
+            kappa_mean[k] = kappa_mean_tmp;
+            kappa_mean2[k] = kappa_mean2_tmp;
+            kappa_mean3[k] = kappa_mean3_tmp;
+            } //only after burnin
         };
         
     };
@@ -454,6 +487,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     return Rcpp::List::create(Rcpp::Named("coef_results") = coef_results, 
                               Rcpp::Named("kappa_results") = kappa_results,
                               Rcpp::Named("kappa_mean") = kappa_mean,
+                              Rcpp::Named("kappa_mean2") = kappa_mean2,
+                              Rcpp::Named("kappa_mean3") = kappa_mean3,
                               Rcpp::Named("accept_rate") = ac_rate,
                               Rcpp::Named("lanzcos_iterations") = iterative_sampling);
 

@@ -1,7 +1,7 @@
 Package: Sarim
 Type: Package
 Title: Structured additive regression using iterative methods
-Version: 0.1.1.0004
+Version: 0.1.1.0005
 Date: 2018-11-14
 Author: Christopher Kuester
 Maintainer: Christopher Kuester <chkue0@gmail.com>

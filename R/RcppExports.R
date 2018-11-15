@@ -80,6 +80,7 @@ sarim_gibbs <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin
 #'          family = "binomial", please choose link = "logit" or if family = "poisson", 
 #'          please choose link = "log". Currently no other link function is present.
 #' @param nIter Number of iterations for MCMC-algorithm
+#' @param burnin Number of iterations for burnin
 #' @param Ntrials Number of trails, only interesting for binomial distribution
 #' @param m Number of maximal Lanczos-iterations
 #' @param thr threshold when the Lanczos-algorithm or conjugate gradient-algorithm should stop
@@ -91,7 +92,7 @@ sarim_gibbs <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin
 #' "lanzcos_iterations" = number of the lanczos-iteration in each step.
 #' 
 #' @export
-sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, m, thr, display_progress = TRUE) {
-    .Call('_Sarim_sarim_mcmc', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, m, thr, display_progress)
+sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, burnin, m, thr, display_progress = TRUE) {
+    .Call('_Sarim_sarim_mcmc', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, burnin, m, thr, display_progress)
 }
 

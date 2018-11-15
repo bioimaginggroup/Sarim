@@ -22,7 +22,7 @@
 #' @param thr threshold, when the Lanczos-algorithm or conjugate gradient-algorithm should break.
 #' 
 #' @export
-sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, burnin = 100L,
+sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 100L, burnin = 20L,
                   family = "gaussian", link = "identity",
                   sigma = 0.1, sigma_a = 0.0001, sigma_b = 0.0001, Ntrials = 1L,
                   m = 250L, thr = 0.0001) {
@@ -184,12 +184,14 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                  ka_start = kappa_startList, ka_values = kappaList,
                                  solver = solverList, lin_constraint = constraintList,
                                  family = family, link = link,
-                                 nIter = nIter, Ntrials = Ntrials,
+                                 nIter = nIter, burnin=burnin, Ntrials = Ntrials,
                                  m = m, thr = thr)
         
         list_out <- list("coef_results" = out$coef_results,
                          "kappa_results" = out$kappa_results,
                          "kappa_mean" = out$kappa_mean,
+                         "kappa_mean2" = out$kappa_mean2,
+                         "kappa_mean3" = out$kappa_mean3,
                          "accept_rate" = out$accept_rate,
                          "lanzcos_iterations" = out$lanzcos_iterations)
     }
