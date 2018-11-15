@@ -5,7 +5,7 @@
 \title{MCMC sampler with Metropolis-Hasting step in Gibbs-sampler for use in sarim()-function}
 \usage{
 sarim_mcmc(y, Z, K, K_rank, gamma, ka_start, ka_values, solver,
-  lin_constraint, family, link, Ntrials, nIter, m, thr,
+  lin_constraint, family, link, Ntrials, nIter, burnin, m, thr,
   display_progress = TRUE)
 }
 \arguments{
@@ -44,6 +44,8 @@ please choose link = "log". Currently no other link function is present.}
 \item{Ntrials}{Number of trails, only interesting for binomial distribution}
 
 \item{nIter}{Number of iterations for MCMC-algorithm}
+
+\item{burnin}{Number of iterations for burnin}
 
 \item{m}{Number of maximal Lanczos-iterations}
 
