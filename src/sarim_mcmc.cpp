@@ -122,6 +122,9 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     Rcpp::List kappa_mean(p);        // mean for kappa values
     Rcpp::List kappa_mean2(p);        // mean for kappa values
     Rcpp::List kappa_mean3(p);        // mean for kappa values
+    Rcpp::List gamma_mean(p);        // mean for kappa values
+    Rcpp::List gamma_mean2(p);        // mean for kappa values
+    Rcpp::List gamma_mean3(p);        // mean for kappa values
     
     for (int i = 0; i < p; ++i) {
         // gamma matrix 
@@ -142,6 +145,11 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         kappa_mean[i] = kappa_mean_tmp;
         kappa_mean2[i] = kappa_mean_tmp;
         kappa_mean3[i] = kappa_mean_tmp;
+
+        Eigen::MatrixXd gamma_mean_tmp = Eigen::VectorXd::Zero(k_size);
+        gamma_mean[i] = gamma_mean_tmp;
+        gamma_mean2[i] = gamma_mean_tmp;
+        gamma_mean3[i] = gamma_mean_tmp;
         
         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
         mu_results[i] = 0 * gamma_tmp;
@@ -440,17 +448,42 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             
             if (n_mcmc>burnin)
             {
+              int k_size = gamma.size();
+              double n=n_mcmc-burnin;
+
+              Eigen::VectorXd gamma_tmp = gamma_matrix.col(n_mcmc);
+              Eigen::VectorXd gamma_mean_old = gamma_mean[k];
+              Eigen::VectorXd gamma_mean2_old = gamma_mean2[k];
+              Eigen::VectorXd gamma_mean3_old = gamma_mean3[k];
+              Eigen::VectorXd gamma_mean_tmp(k_size);
+              Eigen::VectorXd gamma_mean2_tmp(k_size);
+              Eigen::VectorXd gamma_mean3_tmp(k_size);
+            
+              Eigen::VectorXd delta_tmp_g(k_size);
+              Eigen::VectorXd delta_n_tmp_g(k_size);
+              
+              delta_tmp_g = gamma_tmp-gamma_mean_tmp;
+              delta_n_tmp_g = delta_tmp_g/n;              //  delta_n = delta / n
+              //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
+              gamma_mean2_tmp = delta_tmp_g * delta_n_tmp_g * (n-1); // term1 = delta * delta_n * n1
+              gamma_mean_tmp = gamma_mean_old + delta_n_tmp_g; // mean = mean + delta_n
+              gamma_mean3_tmp = gamma_mean3_old + gamma_mean2_tmp * delta_n_tmp_g * (n-2) - 3 * delta_n_tmp_g * gamma_mean2_old; // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
+              gamma_mean2_tmp = gamma_mean2_tmp + gamma_mean2_old; // M2 = M2 + term1
+              
+              gamma_mean[k] = gamma_mean_tmp;
+              gamma_mean2[k] = gamma_mean2_tmp;
+              gamma_mean3[k] = gamma_mean3_tmp;
+              
               Eigen::VectorXd delta_tmp(1);
               Eigen::VectorXd delta_n_tmp(1);
             //Eigen::VectorXd delta_n2_tmp(1);
               Eigen::VectorXd kappa_tmp(1);
               Eigen::VectorXd kappa_mean_tmp(1);
-              Eigen::VectorXd kappa_mean3_tmp(1);
               Eigen::VectorXd kappa_mean2_tmp(1);
+              Eigen::VectorXd kappa_mean3_tmp(1);
               Eigen::VectorXd kappa_mean_old(1);
               Eigen::VectorXd kappa_mean2_old(1);
               Eigen::VectorXd kappa_mean3_old(1);
-              double n=n_mcmc-burnin;
               kappa_tmp = ka_vector.row(n_mcmc);
 //              kappa_tmp = kappa_tmp.log();
               kappa_mean_old = kappa_mean[k];
@@ -489,6 +522,9 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                               Rcpp::Named("kappa_mean") = kappa_mean,
                               Rcpp::Named("kappa_mean2") = kappa_mean2,
                               Rcpp::Named("kappa_mean3") = kappa_mean3,
+                              Rcpp::Named("gamma_mean") = gamma_mean,
+                              Rcpp::Named("gamma_mean2") = gamma_mean2,
+                              Rcpp::Named("gamma_mean3") = gamma_mean3,
                               Rcpp::Named("accept_rate") = ac_rate,
                               Rcpp::Named("lanzcos_iterations") = iterative_sampling);
 

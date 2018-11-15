@@ -192,6 +192,9 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 100L, bur
                          "kappa_mean" = out$kappa_mean,
                          "kappa_mean2" = out$kappa_mean2,
                          "kappa_mean3" = out$kappa_mean3,
+                         "gamma_mean" = out$gamma_mean,
+                         "gamma_mean2" = out$gamma_mean2,
+                         "gamma_mean3" = out$gamma_mean3,
                          "accept_rate" = out$accept_rate,
                          "lanzcos_iterations" = out$lanzcos_iterations)
     }

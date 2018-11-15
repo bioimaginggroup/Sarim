@@ -119,7 +119,7 @@ var<-unlist(mod_poisson$kappa_mean2)/(n-1)
 unlist(parallel::mclapply(mod_poisson$kappa_results,function(x)var(log(x[-(1:51)]))))
 skew<-sqrt(n)*unlist(mod_poisson$kappa_mean3)/unlist(mod_poisson$kappa_mean2)^(1.5)
 
-k<-1
+for (k in 1:5){
 #cp <- list(mean=mean[k], var.cov=array(var[k], c(1,1)), gamma1=skew[k])
 #dp <- sn::cp2dp(cp, "SN")
 #d<-x<-seq(0,50,by=0.1)
@@ -127,4 +127,4 @@ k<-1
 plot(density(mod_poisson$kappa_results[[k]][-(1:51)]))
 #lines(x,d,col="blue")
 lines(seq(0,50,by=0.1),dlnorm(seq(0,50,by=0.1),mean[k],var[k]))
-
+}
