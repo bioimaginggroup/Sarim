@@ -35,8 +35,26 @@
 
 #include <RcppEigen.h>
 #include <random>
+// [[Rcpp::depends(dqrng)]]
+//#include <dqrng_distribution.h>
+// [[Rcpp::depends(dqrng)]]
+#include <dqrng.h>
 #include "misc.hpp"
 
+// class SplitMix : public dqrng::random_64bit_generator {
+// public:
+//   SplitMix (result_type seed) : state(seed) {};
+//   result_type operator() () {
+//     result_type z = (state += 0x9e3779b97f4a7c15ULL);
+//     z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+//     z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+//     return z ^ (z >> 31);
+//   }
+//   void seed(result_type seed) {state = seed;}
+//   
+// private:
+//   result_type state;
+// };
 
 // function to calculate the incomplete cholesky decomposition, return a sparse matrix
 // need for lanczos algorithm
@@ -48,7 +66,9 @@ Eigen::SparseMatrix<double> ichol (const Eigen::SparseMatrix<double> & Q) {
 
 // faster C++-sampling from a gamma distribution
 Eigen::VectorXd random_gamma (const int & n, const double & shape, const double & scale) {
-    Eigen::VectorXd e(n);
+    
+
+     Eigen::VectorXd e(n);
     
     std::random_device device_random;
     std::default_random_engine generator(device_random());
@@ -58,24 +78,48 @@ Eigen::VectorXd random_gamma (const int & n, const double & shape, const double 
     {
         e(i) = distribution(generator);
     }
-    return e;
+      return e;
 };
 
 
 // faster C++-sampling from a gaussian distribution
 Eigen::VectorXd random_gauss (const int & n)
 {
-    Eigen::VectorXd e(n);
-    
+  //Test with dqrng
+  
+  /*
     std::random_device device_random;
     std::default_random_engine generator(device_random());
     std::normal_distribution<> distribution(0, 1);
-    
+    Eigen::VectorXd e(n);
+     
     for (int i = 0; i < n; ++i)
     {
         e(i) = distribution(generator);
     }
     return e;
+*/
+  // Rcpp::NumericVector f(n);
+  // auto rng = dqrng::generator<SplitMix>(42);
+  //   dqrng::normal_distribution dist(0.0, 1.0);
+  //   f = dqrng::generate<dqrng::normal_distribution, Rcpp::NumericVector>(n, rng, dist);
+  //   Eigen::VectorXd e(n);
+  //   
+  //   for (int i = 0; i < n; ++i)
+  //   {
+  //     e(i) = f(i);
+  //   }
+  
+  Eigen::VectorXd e(n);
+  
+  dqrng::dqRNGkind("Xoroshiro128+");
+  dqrng::dqset_seed(42);
+  Rcpp::NumericVector e0 = dqrng::dqrnorm(n,0.0,1.0);
+  for (int i = 0; i < n; ++i)
+    {
+         e(i) = e0(i);
+    }
+  return e;
 };
 
 

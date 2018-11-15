@@ -1,7 +1,7 @@
 Package: Sarim
 Type: Package
 Title: Structured additive regression using iterative methods
-Version: 0.1.1.0008
+Version: 0.1.2.0010
 Date: 2018-11-15
 Author: Christopher Kuester
 Maintainer: Christopher Kuester <chkue0@gmail.com>
@@ -13,9 +13,11 @@ Imports:
     RcppProgress,
     Matrix,
     splines,
-    methods
+    methods,
+    parallel
 LinkingTo: 
     Rcpp, 
     RcppEigen, 
-    RcppProgress
+    RcppProgress,
+    dqrng
 RoxygenNote: 6.1.1

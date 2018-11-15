@@ -125,7 +125,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     Rcpp::List gamma_mean(p);        // mean for kappa values
     Rcpp::List gamma_mean2(p);        // mean for kappa values
     Rcpp::List gamma_mean3(p);        // mean for kappa values
-    
+
     for (int i = 0; i < p; ++i) {
         // gamma matrix 
         Eigen::VectorXd gamma_tmp = gamma(i);
@@ -140,21 +140,16 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         kappa_results_tmp(0) = kappa_tmp;
         kappa_results[i] = kappa_results_tmp;
         
-        Eigen::VectorXd kappa_mean_tmp(1);
-        kappa_mean_tmp(0) = 0.0;
+        Eigen::VectorXd kappa_mean_tmp = Eigen::VectorXd::Zero(1);
         kappa_mean[i] = kappa_mean_tmp;
         kappa_mean2[i] = kappa_mean_tmp;
         kappa_mean3[i] = kappa_mean_tmp;
 
-        Eigen::MatrixXd gamma_mean_tmp = Eigen::VectorXd(k_size);
-        for (int j=0; j<k_size; ++j)
-        {
-          gamma_mean_tmp(j) = 0.0;
-        }
+        Eigen::MatrixXd gamma_mean_tmp = Eigen::VectorXd::Zero(k_size);
         gamma_mean[i] = gamma_mean_tmp;
         gamma_mean2[i] = gamma_mean_tmp;
         gamma_mean3[i] = gamma_mean_tmp;
-        
+
         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
         mu_results[i] = 0 * gamma_tmp;
         
