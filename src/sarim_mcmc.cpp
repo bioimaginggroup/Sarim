@@ -490,7 +490,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
               kappa_mean2_old = kappa_mean2[k];
               kappa_mean3_old = kappa_mean3[k];
             
-            // source: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics
+            // source: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
               delta_tmp(0) = kappa_tmp(0) - kappa_mean_old(0);   //  delta = x - mean
               delta_n_tmp(0) = delta_tmp(0)/n;              //  delta_n = delta / n
             //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n

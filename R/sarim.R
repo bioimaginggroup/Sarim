@@ -186,6 +186,10 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       #                          family = family, link = link,
       #                          nIter = nIter, Ntrials = Ntrials,
       #                          m = m, thr = thr)
+      initialburnin=burnin
+      burnin = FALSE
+      while(!burnin)
+      {
       out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaList,
                                 kappa_startList, ka_values,
                                 solverList, lin_constraint,
@@ -196,12 +200,18 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                           ka_start = kappa_startList, ka_values = kappaList,
                                           solver = solverList, lin_constraint = constraintList,
                                           family = family, link = link,
-                                          nIter = nIter, burnin = burnin, Ntrials = Ntrials,
+                                          nIter = 250, burnin = initialburnin, Ntrials = Ntrials,
                                           m = m, thr = thr)},
                                 y, Z, K, K_rk, gammaList, kappa_startList, kappaList,
                                 solverList, constraintList,
                                 family, link, nIter, Ntrials,
                                 m, thr, mc.cores = 4)
+      p<-psrf(out,250)
+      burnin <- p<1.05
+      initalburnin <- 0
+      print(p)
+      }
+      
          list_out <- out               
         #list_out <- list("coef_results" = out$coef_results,
         #                 "kappa_results" = out$kappa_results,
