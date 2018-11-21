@@ -98,7 +98,6 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                       const int & burnin,
                       const int & m,
                       const double & thr,
-                      const Rcpp::List & startresults,
                       const bool & display_progress = true) {
     
     

@@ -84,7 +84,7 @@ sarim_gibbs <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin
 #' @param Ntrials Number of trails, only interesting for binomial distribution
 #' @param m Number of maximal Lanczos-iterations
 #' @param thr threshold when the Lanczos-algorithm or conjugate gradient-algorithm should stop
-#' @param result list with mean, squared and cubic mean of coefficents and kappa and iterationcounter
+#' @param startresult results (mean, squared and cubic means) of coefficients and kappa (and iterationcounter) from previous run
 #' 
 #' @return Return a list of values:
 #' "coef_results" = result of the estimated coefficient, output given as matrix;
@@ -93,7 +93,7 @@ sarim_gibbs <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin
 #' "lanzcos_iterations" = number of the lanczos-iteration in each step.
 #' 
 #' @export
-sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, burnin, m, thr, result, display_progress = TRUE) {
-    .Call('_Sarim_sarim_mcmc', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, burnin, m, thr, result, display_progress)
+sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, burnin, m, thr, display_progress = TRUE) {
+    .Call('_Sarim_sarim_mcmc', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, Ntrials, nIter, burnin, m, thr, display_progress)
 }
 
