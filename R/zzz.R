@@ -20,7 +20,7 @@ SarimStartupMessage <- function()
     # startup message
     msg <- SarimStartupMessage()
     if (!interactive())
-        msg[1] <- paste("Package 'Sarim' version", packageVersion("Sarim"))
+        msg[1] <- paste("Package 'Sarim' version", utils::packageVersion("Sarim"))
     packageStartupMessage(msg)
     invisible()
 }
