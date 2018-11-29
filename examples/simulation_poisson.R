@@ -15,7 +15,7 @@ f3 <- function(x, y, n_x, n_y) {
 }
 
 
-# scale-function to scale piture values form [-0.5, 0.5]
+# scale-function to scale picture values form [-0.5, 0.5]
 scalefun <- function(z) {
     z_min <- min(z)
     z_max <- max(z)
@@ -31,7 +31,7 @@ scalefun <- function(z) {
 }
 
 # number of pixels and generate "picture" with scaling form [-0.5, 0.5]
-nx <- 12
+nx <- 40
 x <- seq(1, nx) 
 mat <- data.frame("x" = rep(x, each = length(x)), "y" = rep(x, length(x)))
 im1 <- matrix(f1(mat$x, mat$y, nx, nx), nrow = length(x))
@@ -109,22 +109,25 @@ out <- sarim(y ~ sx(Z = Z1, K = K1, penalty = "gmrf", solver = "lanczos",
                       sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
                          ka_start = 50, ka_a = 1, ka_b = 0.00005), 
                   family = "poisson", link = "log",
-                  data = df, nIter = 150, burnin=10, intercept = "FALSE") 
+                  data = df, nIter = 100, burnin=200, intercept = "FALSE") 
 })
 #Time difference of 1.488806 hours
-n=350
-mean<-unlist(mod_poisson$kappa_mean)
-unlist(parallel::mclapply(mod_poisson$kappa_results,function(x)mean(log(x[-(1:51)]))))
-var<-unlist(mod_poisson$kappa_mean2)/(n-1)
-unlist(parallel::mclapply(mod_poisson$kappa_results,function(x)var(log(x[-(1:51)]))))
-skew<-sqrt(n)*unlist(mod_poisson$kappa_mean3)/unlist(mod_poisson$kappa_mean2)^(1.5)
+n=4000
+mean<-unlist(out$kappa_mean)
+unlist(parallel::mclapply(out$kappa_results,function(x)mean(log(x))))
+var<-unlist(out$kappa_mean2)/(n-1)
+unlist(parallel::mclapply(out$kappa_results,function(x)var(log(x))))
+skew<-sqrt(n)*unlist(out$kappa_mean3)/unlist(out$kappa_mean2)^(1.5)
 
 for (k in 1:5){
 #cp <- list(mean=mean[k], var.cov=array(var[k], c(1,1)), gamma1=skew[k])
 #dp <- sn::cp2dp(cp, "SN")
 #d<-x<-seq(0,50,by=0.1)
 #for (i in 1:length(d))d[i]<-dmsn(x[i],dp=dp)
-plot(density(mod_poisson$kappa_results[[k]][-(1:51)]))
+plot(density(out$kappa_results[[k]]))
 #lines(x,d,col="blue")
 lines(seq(0,50,by=0.1),dlnorm(seq(0,50,by=0.1),mean[k],var[k]))
 }
+
+
+

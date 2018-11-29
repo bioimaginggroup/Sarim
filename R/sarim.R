@@ -179,6 +179,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                          "sigma_results" = out$sigma_results,
                          "lanzcos_iterations" = out$lanzcos_iterations)
     }
+    
+    
     if (family != "gaussian") {
       # out <- Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
       #                          ka_start = kappa_startList, ka_values = kappaList,
@@ -192,68 +194,131 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       kappaListList <- lapply(1:4,function(i,x)return(x),x=kappa_startList)
 
       kappa_mean<-gamma_mean<-list()
-      for (i in 1:length(gammaList))gamma_mean <- rep(0.0,length(gammaList[[i]]))
+      gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
       kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
   
-      result <- list(
-        "gamma"=gamma_mean,
-        "gamma2"=gamma_mean,
-        "gamma3"=gamma_mean,
-        "kappa"=kappa_mean,
-        "kappa2"=kappa_mean,
-        "kappa3"=kappa_mean,
-        "iterationcounter"=0
-      )      
+
+      gamma_mean<-gamma_mean2<-gamma_mean3<-lapply(1:4,function(i,x)return(x),x=gamma_mean)
+      kappa_mean<-kappa_mean2<-kappa_mean3<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
       
-      result<-lapply(1:4,function(i,x)return(x),x=result)
+      itercounter<-lapply(1:4,function(i)return(0))
 
       while(!burnin)                     
       {
-        out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaList,
-                                kappa_startList, ka_values,
+       out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+       #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                kappaListList, ka_values,
                                 solverList, lin_constraint,
                                 family, link,
                                 nIter, Ntrials,
-                                m, thr, result){
-                                Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList[[i]],
-                                          ka_start = kappa_startList[[i]], ka_values = kappaList,
+                                m, thr, 
+                                gamma_mean, gamma_mean2, gamma_mean3,
+                                kappa_mean, kappa_mean2, kappa_mean3,
+                                itercounter){
+                                Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                                          ka_start = kappaListList[[i]], ka_values = kappaList,
                                           solver = solverList, lin_constraint = constraintList,
                                           family = family, link = link,
                                           nIter = nIter, burnin = initialburnin, Ntrials = Ntrials,
-                                          m = m, thr = thr, result=result)},
+                                          m = m, thr = thr, 
+                                          gammamean = gamma_mean[[i]], 
+                                          gamma2mean = gamma_mean2[[i]], 
+                                          gamma3mean = gamma_mean3[[i]],
+                                          kappamean = kappa_mean[[i]], 
+                                          kappa2mean = kappa_mean2[[i]], 
+                                          kappa3mean = kappa_mean3[[i]],
+                                          iterationcounter = itercounter[[i]]
+                                )},
                                 y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
                                 solverList, constraintList,
                                 family, link, nIter, Ntrials,
-                                m, thr, result, mc.cores = 4)
-      print(out)
-      p<-psrf(out,250)
+                                m, thr, 
+                                gamma_mean, gamma_mean2, gamma_mean3,
+                                kappa_mean, kappa_mean2, kappa_mean3,
+                                itercounter, mc.cores = 4)
+     # print(out)
+      p<-psrf(out)
+      print(paste("gelman says:",p))
       burnin <- (p<1.05)
-      
       ## last coef_results should be starting value for gamma
       last <- nIter + initialburnin
       
-      for (i in length(out))
+      
+      
+      for (i in 1:length(out))
       {
+        if(is.null(out[[i]]))
+        {
+          print(paste("Chain",i,"failed :("))
+          gammaListList[[i]]<-gammaList  
+          kappaListList[[i]]<-kappaList
+          gamma_mean[[i]]<-gamma_mean2[[i]]<-gamma_mean3[[i]]<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
+          kappa_mean[[i]]<-kappa_mean2[[i]]<-kappa_mean3[[i]]<-lapply(1:length(kappa_startList),function(x)return(0))
+          itercounter[[i]]<-list(0)
+        }
+        else
+        {
         for (j in 1:length(out[[i]]$coef_results))
         {
           #last<-dim(out[[i]]$coef_results[[j]])[2]
           gammaListList[[i]][[j]]<-out[[i]]$coef_results[[j]][,last]
           kappaListList[[i]][[j]]<-out[[i]]$kappa_results[[j]][last]
         }
-        result[[i]]<-list(
-          "gamma"=out[[i]]$gamma_mean,
-          "gamma2"=out[[i]]$gamma_mean2,
-          "gamma3"=out[[i]]$gamma_mean3,
-          "kappa"=out[[i]]$kappa_mean,
-          "kappa2"=out[[i]]$kappa_mean2,
-          "kappa3"=out[[i]]$kappa_mean3,
-          "iterationcounter"=out[[i]]$iterationcounter
-        )   
-      }
+          gamma_mean[[i]]=out[[i]]$gamma_mean
+          gamma_mean2[[i]]=out[[i]]$gamma_mean2
+          gamma_mean3[[i]]=out[[i]]$gamma_mean3
+          kappa_mean[[i]]=out[[i]]$kappa_mean
+          kappa_mean2[[i]]=out[[i]]$kappa_mean2
+          kappa_mean3[[i]]=out[[i]]$kappa_mean3
+          itercounter[[i]]=out[[i]]$iterationcounter[[1]]
+        }
+        }
+      #print(c(out[[1]]$iterationcounter[[1]],p))
+      
       initalburnin <- 0
-      print(burnin)
+      #print(burnin)
       }
       
+      itercounter<-lapply(1:4,function(i)return(0))
+      kappa_mean<-gamma_mean<-list()
+      gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
+      kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
+      
+      
+      gamma_mean<-gamma_mean2<-gamma_mean3<-lapply(1:4,function(i,x)return(x),x=gamma_mean)
+      kappa_mean<-kappa_mean2<-kappa_mean3<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
+      
+      out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                             #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                             kappaListList, ka_values,
+                                             solverList, lin_constraint,
+                                             family, link,
+                                             nIter, Ntrials,
+                                             m, thr, 
+                                             gamma_mean, gamma_mean2, gamma_mean3,
+                                             kappa_mean, kappa_mean2, kappa_mean3,
+                                             itercounter){
+        Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                          ka_start = kappaListList[[i]], ka_values = kappaList,
+                          solver = solverList, lin_constraint = constraintList,
+                          family = family, link = link,
+                          nIter = 1000, burnin = 0, Ntrials = Ntrials,
+                          m = m, thr = thr, 
+                          gammamean = gamma_mean[[i]], 
+                          gamma2mean = gamma_mean2[[i]], 
+                          gamma3mean = gamma_mean3[[i]],
+                          kappamean = kappa_mean[[i]], 
+                          kappa2mean = kappa_mean2[[i]], 
+                          kappa3mean = kappa_mean3[[i]],
+                          iterationcounter = itercounter[[i]]
+        )},
+        y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
+        solverList, constraintList,
+        family, link, nIter, Ntrials,
+        m, thr, 
+        gamma_mean, gamma_mean2, gamma_mean3,
+        kappa_mean, kappa_mean2, kappa_mean3,
+        itercounter, mc.cores = 4)
          list_out <- out               
         #list_out <- list("coef_results" = out$coef_results,
         #                 "kappa_results" = out$kappa_results,

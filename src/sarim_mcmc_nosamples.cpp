@@ -82,7 +82,7 @@
 //' 
 //' @export
 // [[Rcpp::export]]
-Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
+Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
                       const Rcpp::List & Z,
                       const Rcpp::List & K,
                       const Rcpp::List & K_rank,
@@ -135,19 +135,15 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
 
     int itercounter = iterationcounter;
 
+    std::vector<int> k_size(p);
     for (int i = 0; i < p; ++i) {
         // gamma matrix 
         Eigen::VectorXd gamma_tmp = gamma(i);
-        int k_size = gamma_tmp.size();
-        Eigen::MatrixXd gamma_results = Eigen::MatrixXd::Zero(k_size, burnin + nIter + 1);
-        gamma_results.col(0) = gamma_tmp;
-        coef_results[i] = gamma_results;
-        
-        // kappa-value vector
-        double kappa_tmp = ka_start(i);
-        Eigen::VectorXd kappa_results_tmp(burnin + nIter + 1);
-        kappa_results_tmp(0) = kappa_tmp;
-        kappa_results[i] = kappa_results_tmp;
+        k_size[i] = gamma_tmp.size();
+
+        // gamma matrix 
+        coef_results[i] = gamma(i);
+        kappa_results[i] = ka_start(i);
         
         Eigen::VectorXd kappa_mean_tmp;
         kappa_mean_tmp = kappamean[i];
@@ -206,9 +202,9 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         ka_vector,      // vector for 
         y_tilde,        // working observations
         gamma_proposal, // proposal for gamma, could be or not rejected
+        ka_tmp,         // integer for kappa-values, as temporary value 
         mu,             // current mean for gamma ~ N(mu, Q)
         mu_tmp,         // proposal mean
-        ka_tmp,         // vector for kappa-values, as temporary value 
         x,              // proposal for sampling from N(0, Q^{-1})
         v_hist,         // history of v, needed linear constraint and for eventually faster solving 
         it_sampling,    // vector for numbers of lanczos-iterations
@@ -221,14 +217,14 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         alpha,          // acceptance probability
         u;              // u ~ U[0, 1]
     
-    
     ///////////////////////////////////////////////////////////////////////////
     // Initialise working observations and weights
     for (int k = 0; k < p; ++k) {
         Z_k = Z(k);                     // design matrix
         K_k = K(k);                     // penalty/structure matrix
-        gamma_matrix = coef_results(k); // current 
-        Eigen::VectorXd gamma_old = gamma_matrix.col(0);
+        
+        //gamma_matrix = coef_results(k); // current 
+        Eigen::VectorXd gamma_old = coef_results(k);
         ka_vector = kappa_results(k);
         std::string solv = solver(k);
         std::string lin_con = lin_constraint(k);
@@ -243,7 +239,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         ZtW = Z_k.transpose() * W;
         
         // calculate Q = Z' * W * Z + kappa * K  and  b = Z' * W * (y - eta_{-k})
-        b = ZtW * ( y_tilde - (eta - Z_k * gamma_matrix.col(0)) );
+        b = ZtW * ( y_tilde - (eta - Z_k * coef_results(k)));//gamma_matrix.col(0)) );
         Q = ZtW * Z_k + ka_vector(0) * K_k;
             
         // initalise temporary gamma
@@ -289,12 +285,12 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         };
         
         eta += Z_k * (ga_tmp - gamma_old);
-        gamma_matrix.col(0) = ga_tmp;
+        gamma_matrix = ga_tmp;
         coef_results[k] = gamma_matrix;
         mu_results[k] = ga_tmp;
     }
     // end initalisation
- /*   
+    
     ////////////////////////////////////////////////////////////////////////////
     // ITERATION
     // loop for number of iterations "nIter"+"burnin" 
@@ -319,7 +315,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             std::string solv = solver(k);   // which solver should be used
             std::string lin_con = lin_constraint(k); // linear constraint necessary?
             gamma_matrix = coef_results(k); // // coefficient matrix
-            gamma_current = gamma_matrix.col(n_mcmc - 1); // current gamma for simpler calculation
+            gamma_current = coef_results(k); // current gamma for simpler calculation
             ka_vector = kappa_results(k);   // vector for precision parameter
             mu = mu_results(k);             // previous value for expectation
             v_hist = v_history(k);          // history of v, linear constraint
@@ -342,7 +338,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             ZtW = Z_k.transpose() * W;
             
             // calculate Q (precision) matrix 
-            Q = ZtW * Z_k + ka_vector(n_mcmc - 1) * K_k;
+            Q = ZtW * Z_k + ka_vector * K_k;
             
             // calculate b;  b =  Z'_{k} W * (y_tilde - eta_{-k})
             b = ZtW * (y_tilde - (eta_tmp - Z_k * mu) ); 
@@ -421,10 +417,10 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             proposal_p_given_c = -0.5 * ( (gamma_proposal - mu).transpose() * Q * (gamma_proposal - mu) );
             
             // compute p(ga_c | \ka^c)
-            prior_c = - (ka_vector.row(n_mcmc - 1) * 0.5) * gamma_current.transpose() * K_k * gamma_current;
+            prior_c = - (ka_vector * 0.5) * gamma_current.transpose() * K_k * gamma_current;
             
             // compute p(ga_p | \ka^c)
-            prior_p = - (ka_vector.row(n_mcmc - 1) * 0.5) * gamma_proposal.transpose() * K_k * gamma_proposal;
+            prior_p = - (ka_vector * 0.5) * gamma_proposal.transpose() * K_k * gamma_proposal;
             
             // acceptance probability
             alpha = (ll_proposal + prior_p + proposal_c_given_p) - (ll + prior_c + proposal_p_given_c); 
@@ -432,8 +428,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             // accept or reject the proposal?
             u = (random_uniform(1)).array().log(); // sample from file "misc.cpp"/"misc.hpp"
             if (alpha(0) > u(0)) {
-                gamma_matrix.col(n_mcmc) = gamma_proposal;
-                coef_results[k] = gamma_matrix;
+              gamma_matrix = gamma_proposal;
+              coef_results[k] = gamma_matrix;
                 mu_results[k] = mu_tmp;
                 eta = eta_tmp_proposal;   
                 if (n_mcmc>burnin){
@@ -444,8 +440,6 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                 }
                 
             } else {
-                gamma_matrix.col(n_mcmc) = gamma_current;
-                coef_results[k] = gamma_matrix;
                 mu_results[k] = mu;
             }
             
@@ -453,22 +447,21 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             // update kappa_k by sampling from  
             // ~ Ga(kappa_alpha + rk(K_i)/2 , kappa_beta + gamma_k ' * K_k * gamma_k / 2)
             ka_tmp = ka_values(k);
+            // ToDo: ka_alpha ist fix, in vorbereitung verschieben
             double ka_alpha = ka_tmp.coeff(0, 0) + 0.5 * K_rk(0);
             double ka_beta;
             ka_beta = ka_tmp.coeff(1, 0) + 
-                0.5 * (gamma_matrix.col(n_mcmc)).transpose() * K_k * gamma_matrix.col(n_mcmc);
+              0.5 * (gamma_matrix.col(0)).transpose() * K_k * gamma_matrix.col(0);
             
-            ka_vector.row(n_mcmc) = random_gamma(1, ka_alpha, 1/ka_beta);
+            ka_vector = random_gamma(1, ka_alpha, 1.0/ka_beta);
             kappa_results[k] = ka_vector;
             
             if (n_mcmc>burnin)
             {
               
-              Eigen::VectorXd gamma_t = gamma(k);
-              int k_size = gamma_t.size();
               double n=itercounter;
 
-              Eigen::VectorXd gamma_tmp = gamma_matrix.col(n_mcmc);
+              Eigen::VectorXd gamma_tmp = gamma_matrix;
               Eigen::VectorXd gamma_mean_old = gamma_mean[k];
               Eigen::VectorXd gamma_mean2_old = gamma_mean2[k];
               Eigen::VectorXd gamma_mean3_old = gamma_mean3[k];
@@ -501,7 +494,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
               Eigen::VectorXd kappa_mean_old(1);
               Eigen::VectorXd kappa_mean2_old(1);
               Eigen::VectorXd kappa_mean3_old(1);
-              kappa_tmp = ka_vector.row(n_mcmc);
+              kappa_tmp = ka_vector;
 //              kappa_tmp = kappa_tmp.log();
               kappa_mean_old = kappa_mean[k];
               kappa_mean2_old = kappa_mean2[k];
@@ -523,7 +516,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         };
         
     };
-  */  
+    
     // calculate the acceptance rate
     Rcpp::List ac_rate(p);
     for (int i = 0; i < p; ++i) {
