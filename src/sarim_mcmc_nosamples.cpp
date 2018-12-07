@@ -119,7 +119,6 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
      
      ////////////////////////////////////////////////////////////////////////////
      // generate list for further calculations and better output for R
-     Rcpp::List coef_results(p);         // list for coefficients
      Rcpp::List mu_results(p);           // list for temporary mu for faster iterations steps
      Rcpp::List v_history(p);            // list for temporary v for faster iterations steps
      Rcpp::List iterative_sampling(p);   // list for iterative samples in lanczos-algo
@@ -135,161 +134,139 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
       
      int itercounter = iterationcounter;
  
-//     std::vector<int> k_size(p);
-//     for (int i = 0; i < p; ++i) {
-//         // gamma matrix 
-//         Eigen::VectorXd gamma_tmp = gamma(i);
-//         k_size[i] = gamma_tmp.size();
-// 
-//         // gamma matrix 
-//         coef_results[i] = gamma(i);
-//         kappa_results[i] = ka_start(i);
-//         
-//         Eigen::VectorXd kappa_mean_tmp;
-//         kappa_mean_tmp = kappamean[i];
-//         kappa_mean[i] = kappa_mean_tmp; 
-//         kappa_mean_tmp = kappa2mean[i];
-//         kappa_mean2[i] = kappa_mean_tmp;
-//         kappa_mean_tmp = kappa3mean[i];
-//         kappa_mean3[i] = kappa_mean_tmp;
-// 
-//         Eigen::VectorXd gamma_mean_tmp;
-//         gamma_mean_tmp=gammamean[i];
-//         gamma_mean[i] = gamma_mean_tmp;
-//         gamma_mean_tmp=gamma2mean[i];
-//         gamma_mean2[i] = gamma_mean_tmp;
-//         gamma_mean_tmp=gamma3mean[i];
-//         gamma_mean3[i] = gamma_mean_tmp;
-// 
-//         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
-//         mu_results[i] = 0 * gamma_tmp;
-//         
-//         // history for eventually linear constraint, for faster calculation
-//         v_history[i] = 0 * gamma_tmp;
-//         
-//         // number of iterations in lanczos-algo
-//         iterative_sampling[i] = Eigen::VectorXd::Zero(nIter+burnin);
-//         
-//         // starting value for lanczos-algo
-//         m_iter[i] = m;
-//     };
-// 
-//     // list for acceptance rate
-//     int ac = 0;
-//     Rcpp::List ac_list(p);
-//     for (int i = 0; i < p; ++i) {
-//         ac_list[i] = ac;
-//     }
-//     
-//     // initialise eta the first time, eta = Z_1 * gamma_1 + ... + Z_p * gamma_p
-//     Eigen::VectorXd eta = Eigen::VectorXd::Zero(n);
-//     // eta_tmp for calculating eta_{-k}
-//     Eigen::VectorXd eta_tmp = eta;
-//     /*
-//     for (int i = 0; i < p; ++i) {
-//         Eigen::SparseMatrix<double> Z_tmp = Z(i);
-//         Eigen::VectorXd gamma_tmp = gamma(i);
-//         eta += Z_tmp * gamma_tmp;
-//     };
-//     */
-// 
-//     // initialise values, required for computation
-//     Eigen::SparseMatrix<double> Z_k, K_k, Q, W, ZtW, M, Mt;
-//     Eigen::MatrixXd gamma_matrix, gamma_current;
-//     
-//     Eigen::VectorXd K_rk, // Rank for penalty matrix
-//         b,              // response vector, i.e. Z' * W (y_tilde - eta_{-k})
-//         ka_vector,      // vector for 
-//         y_tilde,        // working observations
-//         gamma_proposal, // proposal for gamma, could be or not rejected
-//         ka_tmp,         // integer for kappa-values, as temporary value 
-//         mu,             // current mean for gamma ~ N(mu, Q)
-//         mu_tmp,         // proposal mean
-//         x,              // proposal for sampling from N(0, Q^{-1})
-//         v_hist,         // history of v, needed linear constraint and for eventually faster solving 
-//         it_sampling,    // vector for numbers of lanczos-iterations
-//         ll,             // log-likelihood with current gamma
-//         ll_proposal,    // log-likelihood with proposal gamma
-//         proposal_c_given_p,     // conditional likelihood given 
-//         proposal_p_given_c, 
-//         prior_c, 
-//         prior_p, 
-//         alpha,          // acceptance probability
-//         u;              // u ~ U[0, 1]
-//     
-//     ///////////////////////////////////////////////////////////////////////////
-//     // Initialise working observations and weights
-//     for (int k = 0; k < p; ++k) {
-//         Z_k = Z(k);                     // design matrix
-//         K_k = K(k);                     // penalty/structure matrix
-//         
-//         //gamma_matrix = coef_results(k); // current 
-//         Eigen::VectorXd gamma_old = coef_results(k);
-//         ka_vector = kappa_results(k);
-//         std::string solv = solver(k);
-//         std::string lin_con = lin_constraint(k);
-//         
-//         
-//         // compute weights and working response from file "iwls.cpp"
-//         IWLS iwls = compute(y, eta, family, link, Ntrials);
-//         W = iwls.W;
-//         y_tilde = iwls.y_tilde;
-//         
-//         // compute Z' * W once for efficiency
-//         ZtW = Z_k.transpose() * W;
-//         
-//         // calculate Q = Z' * W * Z + kappa * K  and  b = Z' * W * (y - eta_{-k})
-//         b = ZtW * ( y_tilde - (eta - Z_k * coef_results(k)));//gamma_matrix.col(0)) );
-//         Q = ZtW * Z_k + ka_vector(0) * K_k;
-//             
-//         // initalise temporary gamma
-//         Eigen::VectorXd ga_tmp; 
-//         
-//         // set start values for gamma
-//         if (solv == "rue") {
-//             // solve linear system Q * ga = b by Rue's method
-//             Eigen::SimplicialLLT<Eigen::SparseMatrix<double> > lltOfQ(Q); 
-//             Eigen::SparseMatrix<double> Lt = lltOfQ.matrixU();
-//             Eigen::SparseLU<Eigen::SparseMatrix<double> > LUtsolve(Lt);
-//             Eigen::SparseLU<Eigen::SparseMatrix<double> > LUsolve(Lt.transpose());
-//             ga_tmp = LUtsolve.solve(LUsolve.solve(b));
-//             
-//             if (lin_con == "TRUE") {
-//                 unsigned int n = ga_tmp.rows();
-//                 Eigen::VectorXd At = Eigen::VectorXd::Ones(n);
-//                 Eigen::VectorXd e = Eigen::VectorXd::Zero(1);
-//                 Eigen::VectorXd v = LUtsolve.solve(LUsolve.solve(At));
-//                 
-//                 ga_tmp = ga_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * ga_tmp - e);
-//             }
-//             
-//         } else {
-//             // solve linear system Q * ga = b by conjugate gradient method
-//             Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, 
-//                                      Eigen::Lower|Eigen::Upper, 
-//                                      Eigen::IncompleteCholesky<double> > iccg(Q);
-//             iccg.setTolerance(thr); // set tolerance for convergence
-//             ga_tmp = iccg.solve(b); // solve Q * ga = b
-//             
-//             // apply linear constraint if needed
-//             if (lin_con == "TRUE") {
-//                 // get number of parameters
-//                 unsigned int n = ga_tmp.rows();
-//                 Eigen::VectorXd At = Eigen::VectorXd::Ones(n); // column vector of ones
-//                 Eigen::VectorXd e = Eigen::VectorXd::Zero(1);  // single value of zero   
-//                 Eigen::VectorXd v = iccg.solve(At);
-//                 
-//                 ga_tmp = ga_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * ga_tmp - e);
-//             }
-//             
-//         };
-//         
-//         eta += Z_k * (ga_tmp - gamma_old);
-//         gamma_matrix = ga_tmp;
-//         coef_results[k] = gamma_matrix;
-//         mu_results[k] = ga_tmp;
-//     }
-//     // end initalisation
+     std::vector<int> k_size(p);
+     for (int i = 0; i < p; ++i) {
+         // gamma matrix 
+         Eigen::VectorXd gamma_tmp = gamma(i);
+
+         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
+         mu_results[i] = 0 * gamma_tmp;
+         
+         // history for eventually linear constraint, for faster calculation
+         v_history[i] = 0 * gamma_tmp;
+         
+         // number of iterations in lanczos-algo
+         iterative_sampling[i] = Eigen::VectorXd::Zero(nIter+burnin);
+         
+         // starting value for lanczos-algo
+         m_iter[i] = m;
+     };
+ 
+     // list for acceptance rate
+     int ac = 0;
+     Rcpp::List ac_list(p);
+     for (int i = 0; i < p; ++i) {
+         ac_list[i] = ac;
+     }
+     
+     // initialise eta the first time, eta = Z_1 * gamma_1 + ... + Z_p * gamma_p
+     Eigen::VectorXd eta = Eigen::VectorXd::Zero(n);
+     // eta_tmp for calculating eta_{-k}
+     Eigen::VectorXd eta_tmp = eta;
+     /*
+     for (int i = 0; i < p; ++i) {
+         Eigen::SparseMatrix<double> Z_tmp = Z(i);
+         Eigen::VectorXd gamma_tmp = gamma(i);
+         eta += Z_tmp * gamma_tmp;
+     };
+     */
+ 
+     // initialise values, required for computation
+     Eigen::SparseMatrix<double> Z_k, K_k, Q, W, ZtW, M, Mt;
+     Eigen::MatrixXd gamma_matrix, gamma_current;
+     
+     Eigen::VectorXd K_rk, // Rank for penalty matrix
+         b,              // response vector, i.e. Z' * W (y_tilde - eta_{-k})
+         ka_vector,      // vector for 
+         y_tilde,        // working observations
+         gamma_proposal, // proposal for gamma, could be or not rejected
+         ka_tmp,         // integer for kappa-values, as temporary value 
+         mu,             // current mean for gamma ~ N(mu, Q)
+         mu_tmp,         // proposal mean
+         x,              // proposal for sampling from N(0, Q^{-1})
+         v_hist,         // history of v, needed linear constraint and for eventually faster solving 
+         it_sampling,    // vector for numbers of lanczos-iterations
+         ll,             // log-likelihood with current gamma
+         ll_proposal,    // log-likelihood with proposal gamma
+         proposal_c_given_p,     // conditional likelihood given 
+         proposal_p_given_c, 
+         prior_c, 
+         prior_p, 
+         alpha,          // acceptance probability
+         u;              // u ~ U[0, 1]
+     
+     ///////////////////////////////////////////////////////////////////////////
+     // Initialise working observations and weights
+     for (int k = 0; k < p; ++k) {
+       Z_k = Z(k);                     // design matrix
+         K_k = K(k);                     // penalty/structure matrix
+         
+         gamma_matrix = gamma(k); // current 
+         Eigen::VectorXd gamma_old = gamma(k);
+         ka_vector = kappa_results(k);
+         std::string solv = solver(k);
+         std::string lin_con = lin_constraint(k);
+         
+         
+         // compute weights and working response from file "iwls.cpp"
+         IWLS iwls = compute(y, eta, family, link, Ntrials);
+         W = iwls.W;
+         y_tilde = iwls.y_tilde;
+         
+         // compute Z' * W once for efficiency
+         ZtW = Z_k.transpose() * W;
+         
+         // calculate Q = Z' * W * Z + kappa * K  and  b = Z' * W * (y - eta_{-k})
+         b = ZtW * ( y_tilde - (eta - Z_k * gamma_matrix.col(0)) );
+         Q = ZtW * Z_k + ka_vector(0) * K_k;
+             
+         // initalise temporary gamma
+         Eigen::VectorXd ga_tmp; 
+         
+         // set start values for gamma
+         if (solv == "rue") {
+             // solve linear system Q * ga = b by Rue's method
+             Eigen::SimplicialLLT<Eigen::SparseMatrix<double> > lltOfQ(Q); 
+             Eigen::SparseMatrix<double> Lt = lltOfQ.matrixU();
+             Eigen::SparseLU<Eigen::SparseMatrix<double> > LUtsolve(Lt);
+             Eigen::SparseLU<Eigen::SparseMatrix<double> > LUsolve(Lt.transpose());
+             ga_tmp = LUtsolve.solve(LUsolve.solve(b));
+             
+             if (lin_con == "TRUE") {
+                 unsigned int n = ga_tmp.rows();
+                 Eigen::VectorXd At = Eigen::VectorXd::Ones(n);
+                 Eigen::VectorXd e = Eigen::VectorXd::Zero(1);
+                 Eigen::VectorXd v = LUtsolve.solve(LUsolve.solve(At));
+                 
+                 ga_tmp = ga_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * ga_tmp - e);
+             }
+             
+         } else {
+             // solve linear system Q * ga = b by conjugate gradient method
+             Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, 
+                                      Eigen::Lower|Eigen::Upper, 
+                                      Eigen::IncompleteCholesky<double> > iccg(Q);
+             iccg.setTolerance(thr); // set tolerance for convergence
+             ga_tmp = iccg.solve(b); // solve Q * ga = b
+             
+             // apply linear constraint if needed
+             if (lin_con == "TRUE") {
+                 // get number of parameters
+                 unsigned int n = ga_tmp.rows();
+                 Eigen::VectorXd At = Eigen::VectorXd::Ones(n); // column vector of ones
+                 Eigen::VectorXd e = Eigen::VectorXd::Zero(1);  // single value of zero   
+                 Eigen::VectorXd v = iccg.solve(At);
+                 
+                 ga_tmp = ga_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * ga_tmp - e);
+             }
+             
+         };
+         
+         eta += Z_k * (ga_tmp - gamma_old);
+         gamma_matrix = ga_tmp;
+         mu_results[k] = ga_tmp;
+     }
+     // end initalisation
 //     
 //     ////////////////////////////////////////////////////////////////////////////
 //     // ITERATION
