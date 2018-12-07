@@ -126,15 +126,12 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP _Sarim_sarim_mcmc_samples(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-
 static const R_CallMethodDef CallEntries[] = {
     {"_Sarim_icholCpp", (DL_FUNC) &_Sarim_icholCpp, 1},
     {"_Sarim_lanczosCpp", (DL_FUNC) &_Sarim_lanczosCpp, 5},
     {"_Sarim_sarim_gibbs", (DL_FUNC) &_Sarim_sarim_gibbs, 15},
     {"_Sarim_sarim_mcmc", (DL_FUNC) &_Sarim_sarim_mcmc, 24},
     {"_Sarim_sarim_mcmc_nosamples", (DL_FUNC) &_Sarim_sarim_mcmc_nosamples, 24},
-    {"_Sarim_sarim_mcmc_samples",   (DL_FUNC) &_Sarim_sarim_mcmc_samples,   24},
     {NULL, NULL, 0}
 };
 
