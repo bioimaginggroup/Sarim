@@ -235,7 +235,9 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 m, thr, 
                                 gamma_mean, gamma_mean2, gamma_mean3,
                                 kappa_mean, kappa_mean2, kappa_mean3,
-                                itercounter, mc.cores = 4)
+                                itercounter 
+                     #,mc.cores = 4
+                     )
      # print(out)
       p<-psrf(out)
       print(paste("gelman says:",p))

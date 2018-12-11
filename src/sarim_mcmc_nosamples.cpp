@@ -203,11 +203,13 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
        Z_k = Z(k);                     // design matrix
          K_k = K(k);                     // penalty/structure matrix
          
+         Rprintf("Start 1");
          gamma_current = coef_results(k); // current 
          Eigen::VectorXd gamma_old = gamma(k);
          ka_vector = kappa_results(k);
          std::string solv = solver(k);
          std::string lin_con = lin_constraint(k);
+         Rprintf("Start 2");
          
          
          // compute weights and working response from file "iwls.cpp"
@@ -215,16 +217,19 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
          W = iwls.W;
          y_tilde = iwls.y_tilde;
          
+         Rprintf("Start 3");
          // compute Z' * W once for efficiency
          ZtW = Z_k.transpose() * W;
          
          // calculate Q = Z' * W * Z + kappa * K  and  b = Z' * W * (y - eta_{-k})
          b = ZtW * ( y_tilde - (eta - Z_k * gamma_current) );
          Q = ZtW * Z_k + ka_vector(0) * K_k;
-             
+         Rprintf("Start 4");
+         
          // initalise temporary gamma
          Eigen::VectorXd ga_tmp; 
          
+         Rprintf("Start 5");
          // set start values for gamma
          if (solv == "rue") {
              // solve linear system Q * ga = b by Rue's method
@@ -250,6 +255,7 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
                                       Eigen::IncompleteCholesky<double> > iccg(Q);
              iccg.setTolerance(thr); // set tolerance for convergence
              ga_tmp = iccg.solve(b); // solve Q * ga = b
+             Rprintf("Start 6");
              
              // apply linear constraint if needed
              if (lin_con == "TRUE") {
@@ -261,9 +267,10 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
                  
                  ga_tmp = ga_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * ga_tmp - e);
              }
-             
+
          };
          
+         Rprintf("Start init");
          eta += Z_k * (ga_tmp - gamma_old);
          gamma_current = ga_tmp;
          mu_results[k] = ga_tmp;
