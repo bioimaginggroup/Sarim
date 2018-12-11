@@ -205,8 +205,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
 
       while(!burnin)                     
       {
-       out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
-       #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+       #out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+       out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
                                 kappaListList, ka_values,
                                 solverList, lin_constraint,
                                 family, link,
@@ -215,7 +215,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 gamma_mean, gamma_mean2, gamma_mean3,
                                 kappa_mean, kappa_mean2, kappa_mean3,
                                 itercounter){
-                                Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                                Sarim::sarim_mcmc_nosamples(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
                                           ka_start = kappaListList[[i]], ka_values = kappaList,
                                           solver = solverList, lin_constraint = constraintList,
                                           family = family, link = link,
@@ -240,10 +240,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       p<-psrf(out)
       print(paste("gelman says:",p))
       burnin <- (p<1.05)
-      ## last coef_results should be starting value for gamma
+      ## last coef_results should be starting value for gamma 
       last <- nIter + initialburnin
-      
-      
       
       for (i in 1:length(out))
       {
@@ -273,7 +271,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
           itercounter[[i]]=out[[i]]$iterationcounter[[1]]
         }
         }
-      #print(c(out[[1]]$iterationcounter[[1]],p))
+      print(c(out[[1]]$iterationcounter[[1]],p))
       
       initalburnin <- 0
       #print(burnin)

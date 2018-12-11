@@ -69,10 +69,9 @@
 //'          please choose link = "log". Currently no other link function is present.
 //' @param nIter Number of iterations for MCMC-algorithm
 //' @param burnin Number of iterations for burnin
-//' @param Ntrials Number of trails, only interesting for binomial distribution
+//' @param Ntrials Number of trials, only interesting for binomial distribution
 //' @param m Number of maximal Lanczos-iterations
 //' @param thr threshold when the Lanczos-algorithm or conjugate gradient-algorithm should stop
-//' @param startresult results (mean, squared and cubic means) of coefficients and kappa (and iterationcounter) from previous run
 //' 
 //' @return Return a list of values:
 //' "coef_results" = result of the estimated coefficient, output given as matrix;
@@ -116,7 +115,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     // number of observations
     int n = y.rows();
 
-    
+    Rprintf("%d\n",nIter);
+
     ////////////////////////////////////////////////////////////////////////////
     // generate list for further calculations and better output for R
     Rcpp::List coef_results(p);         // list for coefficients
@@ -294,7 +294,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         mu_results[k] = ga_tmp;
     }
     // end initalisation
- /*   
+    
     ////////////////////////////////////////////////////////////////////////////
     // ITERATION
     // loop for number of iterations "nIter"+"burnin" 
@@ -523,7 +523,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         };
         
     };
-  */  
+ 
     // calculate the acceptance rate
     Rcpp::List ac_rate(p);
     for (int i = 0; i < p; ++i) {

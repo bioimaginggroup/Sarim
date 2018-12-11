@@ -121,6 +121,7 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
      // generate list for further calculations and better output for R
      Rcpp::List mu_results(p);           // list for temporary mu for faster iterations steps
      Rcpp::List v_history(p);            // list for temporary v for faster iterations steps
+     Rcpp::List coef_results(p);         // list for coefficients
      Rcpp::List iterative_sampling(p);   // list for iterative samples in lanczos-algo
      Rcpp::List kappa_results(p);        // list for kappa values
      Rcpp::List m_iter(p);               // list for max-lanczos-iterations
@@ -134,11 +135,12 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
       
      int itercounter = iterationcounter;
  
-     std::vector<int> k_size(p);
+     //std::vector<int> k_size(p);
      for (int i = 0; i < p; ++i) {
          // gamma matrix 
          Eigen::VectorXd gamma_tmp = gamma(i);
-
+         coef_results[i] = gamma_tmp;
+         
          // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
          mu_results[i] = 0 * gamma_tmp;
          
@@ -173,7 +175,7 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
  
      // initialise values, required for computation
      Eigen::SparseMatrix<double> Z_k, K_k, Q, W, ZtW, M, Mt;
-     Eigen::MatrixXd gamma_matrix, gamma_current;
+     Eigen::MatrixXd gamma_current;
      
      Eigen::VectorXd K_rk, // Rank for penalty matrix
          b,              // response vector, i.e. Z' * W (y_tilde - eta_{-k})
@@ -194,14 +196,14 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
          prior_p, 
          alpha,          // acceptance probability
          u;              // u ~ U[0, 1]
-     
+     Rprintf("Start init");
      ///////////////////////////////////////////////////////////////////////////
      // Initialise working observations and weights
      for (int k = 0; k < p; ++k) {
        Z_k = Z(k);                     // design matrix
          K_k = K(k);                     // penalty/structure matrix
          
-         gamma_matrix = gamma(k); // current 
+         gamma_current = coef_results(k); // current 
          Eigen::VectorXd gamma_old = gamma(k);
          ka_vector = kappa_results(k);
          std::string solv = solver(k);
@@ -217,7 +219,7 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
          ZtW = Z_k.transpose() * W;
          
          // calculate Q = Z' * W * Z + kappa * K  and  b = Z' * W * (y - eta_{-k})
-         b = ZtW * ( y_tilde - (eta - Z_k * gamma_matrix.col(0)) );
+         b = ZtW * ( y_tilde - (eta - Z_k * gamma_current) );
          Q = ZtW * Z_k + ka_vector(0) * K_k;
              
          // initalise temporary gamma
@@ -263,256 +265,265 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
          };
          
          eta += Z_k * (ga_tmp - gamma_old);
-         gamma_matrix = ga_tmp;
+         gamma_current = ga_tmp;
          mu_results[k] = ga_tmp;
      }
      // end initalisation
-//     
-//     ////////////////////////////////////////////////////////////////////////////
-//     // ITERATION
-//     // loop for number of iterations "nIter"+"burnin" 
-//     // C++ begin in 0 !!!   important for loops
-//     for (int n_mcmc = 1; n_mcmc <= (nIter+burnin); ++n_mcmc) {
-//         // if (Progress::check_abort() )
-//         //     return -1.0;
-//         pro.increment();
-//         
-//         if (n_mcmc>burnin){
-//           itercounter++;}
-//         
-//         // Update regression coefficients, one at a time
-//         // loop for covariates p 
-//         for (int k = 0; k < p; ++k) {
-//             
-//             // initialise required matrices Z and K and coefficient gamma and kappa
-//             // set ._k for required calculations
-//             Z_k = Z(k);                     // design matrix
-//             K_k = K(k);                     // penalty/structure matrix
-//             K_rk = K_rank(k);               // rank of penalty/structure matrix
-//             std::string solv = solver(k);   // which solver should be used
-//             std::string lin_con = lin_constraint(k); // linear constraint necessary?
-//             gamma_matrix = coef_results(k); // // coefficient matrix
-//             gamma_current = coef_results(k); // current gamma for simpler calculation
-//             ka_vector = kappa_results(k);   // vector for precision parameter
-//             mu = mu_results(k);             // previous value for expectation
-//             v_hist = v_history(k);          // history of v, linear constraint
-//             it_sampling = iterative_sampling(k);    // number of iterations in lanczos
-//             int max_iter_of_lanczos = m_iter(k);    // max-lanczos-iterations
-//             ////////////////////////////////////////////////////////////////////
-//             
-//             
-//             // First calculate the log-likelihood and 
-//             // eta_tmp = eta + Z_k * (mu - gamma), i.e. no requirement of log|Q|
-//             ll = loglike(y, eta, family, link, Ntrials);
-//             eta_tmp = eta + Z_k * (mu - gamma_current);
-//             
-//             // calculate weight matrix W and working observations
-//             IWLS iwls = compute(y, eta_tmp, family, link, Ntrials);
-//             W = iwls.W;
-//             y_tilde = iwls.y_tilde;
-//             
-//             // calculate one time for efficiency Z'W
-//             ZtW = Z_k.transpose() * W;
-//             
-//             // calculate Q (precision) matrix 
-//             Q = ZtW * Z_k + ka_vector * K_k;
-//             
-//             // calculate b;  b =  Z'_{k} W * (y_tilde - eta_{-k})
-//             b = ZtW * (y_tilde - (eta_tmp - Z_k * mu) ); 
-//             
-//             
-//             // sample from gaussian distribution
-//             // depending on solver 'rue' or 'lanczos'
-//             if (solv == "rue") {
-//                 // simple Rue-block-algorithm; see file "rue.cpp"/"rue.hpp"
-//                 // include linear-constraint if needed
-//                 RueSolv rue_solver = algorithm(Q, b, lin_con);
-//                 gamma_proposal = rue_solver.ga;
-//                 mu_tmp = rue_solver.mu;
-//                 
-//             } else {
-//                 // Lanczos approximation of x ~ N(0, Q^{-1})
-//                 // first calculate incomplete cholesky; see file "misc.cpp"/"misc.hpp"
-//                 M = ichol(Q);
-//                 Mt = M.transpose();
-//                 
-//                 // Lanczos algorithm; see file "lanczos.cpp"/"lanczos.hpp"
-//                 Lanczos lanczos_solver = algorithm(Q, max_iter_of_lanczos, M, Mt, thr);
-//                 
-//                 // save number of lanczos-iteration
-//                 it_sampling(n_mcmc - 1) = lanczos_solver.Iteration;
-//                 iterative_sampling[k] = it_sampling;
-//                 m_iter[k] = it_sampling(n_mcmc - 1) + 10;
-//                 if (lanczos_solver.Iteration >= m) {
-//                     Rcpp::Rcout << "Number of lanczos-iteration <= " << m <<" in iteration " 
-//                                 << n_mcmc << ". Set m higher (>" << m << ")" << std::endl;
-//                 }
-//                 
-//                 // sample from N(0, Q^{-1})
-//                 x = lanczos_solver.x;
-//                 
-//                 // solve linear system Q*mu = b
-//                 Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, 
-//                                          Eigen::Lower|Eigen::Upper, 
-//                                          Eigen::IncompleteCholesky<double> > iccg(Q);
-//                 iccg.setTolerance(thr);     // set tolerance threshold for convergence
-//                 iccg.solveWithGuess(b, mu); // guess initial solution for eventually faster solving
-//                 mu_tmp = iccg.solve(b);
-//                 
-//                 // proposal for gamma ~ N(mu, Q^{-1}), i.e. gamma = x + mu
-//                 gamma_proposal = x + mu_tmp;
-//                 
-//                 // apply linear constraint if needed
-//                 if (lin_con == "TRUE") {
-//                     // get number of parameters
-//                     unsigned int n = gamma_proposal.rows();
-//                     Eigen::VectorXd At = Eigen::VectorXd::Ones(n);
-//                     Eigen::VectorXd e = Eigen::VectorXd::Zero(1);
-//                     Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, 
-//                                              Eigen::Lower|Eigen::Upper, 
-//                                              Eigen::IncompleteCholesky<double> > iccgOfA(Q);
-//                     iccgOfA.setTolerance(thr);          // set tolerance threshold for convergence
-//                     iccgOfA.solveWithGuess(b, v_hist);  // guess initial solution for eventually faster solving
-//                     Eigen::VectorXd v = iccgOfA.solve(At);
-//                     
-//                     v_history[k] = v;
-//                     
-//                     gamma_proposal = gamma_proposal - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * gamma_proposal - e);
-//                     mu_tmp = mu_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * mu_tmp - e);
-//                 }
-//                 
-//             };
-//             
-//             // compute eta and loglikelihood
-//             Eigen::VectorXd eta_tmp_proposal = eta_tmp + Z_k * (gamma_proposal - mu);
-//             ll_proposal = loglike(y, eta_tmp_proposal, family, link, Ntrials);
-//             
-//             // compute p(ga_c | \mu^p, Q^p)
-//             proposal_c_given_p = -0.5 * ( (gamma_current - mu).transpose() * Q * (gamma_current - mu) );
-//             
-//             // compute p(ga_p | \mu^c, Q^c)  
-//             proposal_p_given_c = -0.5 * ( (gamma_proposal - mu).transpose() * Q * (gamma_proposal - mu) );
-//             
-//             // compute p(ga_c | \ka^c)
-//             prior_c = - (ka_vector * 0.5) * gamma_current.transpose() * K_k * gamma_current;
-//             
-//             // compute p(ga_p | \ka^c)
-//             prior_p = - (ka_vector * 0.5) * gamma_proposal.transpose() * K_k * gamma_proposal;
-//             
-//             // acceptance probability
-//             alpha = (ll_proposal + prior_p + proposal_c_given_p) - (ll + prior_c + proposal_p_given_c); 
-//             
-//             // accept or reject the proposal?
-//             u = (random_uniform(1)).array().log(); // sample from file "misc.cpp"/"misc.hpp"
-//             if (alpha(0) > u(0)) {
-//               gamma_matrix = gamma_proposal;
-//               coef_results[k] = gamma_matrix;
-//                 mu_results[k] = mu_tmp;
-//                 eta = eta_tmp_proposal;   
-//                 if (n_mcmc>burnin){
-//                   // increase accept
-//                 int accept = ac_list(k);
-//                 accept += 1;
-//                 ac_list[k] = accept;
-//                 }
-//                 
-//             } else {
-//                 mu_results[k] = mu;
-//             }
-//             
-//             
-//             // update kappa_k by sampling from  
-//             // ~ Ga(kappa_alpha + rk(K_i)/2 , kappa_beta + gamma_k ' * K_k * gamma_k / 2)
-//             ka_tmp = ka_values(k);
-//             // ToDo: ka_alpha ist fix, in vorbereitung verschieben
-//             double ka_alpha = ka_tmp.coeff(0, 0) + 0.5 * K_rk(0);
-//             double ka_beta;
-//             ka_beta = ka_tmp.coeff(1, 0) + 
-//               0.5 * (gamma_matrix.col(0)).transpose() * K_k * gamma_matrix.col(0);
-//             
-//             ka_vector = random_gamma(1, ka_alpha, 1.0/ka_beta);
-//             kappa_results[k] = ka_vector;
-//             
-//             if (n_mcmc>burnin)
-//             {
-//               
-//               double n=itercounter;
-// 
-//               Eigen::VectorXd gamma_tmp = gamma_matrix;
-//               Eigen::VectorXd gamma_mean_old = gamma_mean[k];
-//               Eigen::VectorXd gamma_mean2_old = gamma_mean2[k];
-//               Eigen::VectorXd gamma_mean3_old = gamma_mean3[k];
-//               Eigen::VectorXd gamma_mean_tmp(k_size);
-//               Eigen::VectorXd gamma_mean2_tmp(k_size);
-//               Eigen::VectorXd gamma_mean3_tmp(k_size);
-//             
-//               Eigen::VectorXd delta_tmp_g(k_size);
-//               Eigen::VectorXd delta_n_tmp_g(k_size);
-//               
-//               delta_tmp_g = gamma_tmp-gamma_mean_old;
-//               delta_n_tmp_g = delta_tmp_g/n;              //  delta_n = delta / n
-//               //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
-//               gamma_mean2_tmp = delta_tmp_g * delta_n_tmp_g * (n-1); // term1 = delta * delta_n * n1
-//               gamma_mean_tmp = gamma_mean_old + delta_n_tmp_g; // mean = mean + delta_n
-//               gamma_mean3_tmp = gamma_mean3_old + gamma_mean2_tmp * delta_n_tmp_g * (n-2) - 3 * delta_n_tmp_g * gamma_mean2_old; // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
-//               gamma_mean2_tmp = gamma_mean2_tmp + gamma_mean2_old; // M2 = M2 + term1
-//               
-//               gamma_mean[k] = gamma_mean_tmp;
-//               gamma_mean2[k] = gamma_mean2_tmp;
-//               gamma_mean3[k] = gamma_mean3_tmp;
-//               
-//               Eigen::VectorXd delta_tmp(1);
-//               Eigen::VectorXd delta_n_tmp(1);
-//             //Eigen::VectorXd delta_n2_tmp(1);
-//               Eigen::VectorXd kappa_tmp(1);
-//               Eigen::VectorXd kappa_mean_tmp(1);
-//               Eigen::VectorXd kappa_mean2_tmp(1);
-//               Eigen::VectorXd kappa_mean3_tmp(1);
-//               Eigen::VectorXd kappa_mean_old(1);
-//               Eigen::VectorXd kappa_mean2_old(1);
-//               Eigen::VectorXd kappa_mean3_old(1);
-//               kappa_tmp = ka_vector;
-// //              kappa_tmp = kappa_tmp.log();
-//               kappa_mean_old = kappa_mean[k];
-//               kappa_mean2_old = kappa_mean2[k];
-//               kappa_mean3_old = kappa_mean3[k];
-//             
-//             // source: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-//               delta_tmp(0) = kappa_tmp(0) - kappa_mean_old(0);   //  delta = x - mean
-//               delta_n_tmp(0) = delta_tmp(0)/n;              //  delta_n = delta / n
-//             //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
-//               kappa_mean2_tmp(0) = delta_tmp(0) * delta_n_tmp(0) * (n-1); // term1 = delta * delta_n * n1
-//               kappa_mean_tmp(0) = kappa_mean_old(0) + delta_n_tmp(0); // mean = mean + delta_n
-//               kappa_mean3_tmp(0) = kappa_mean3_old(0) + kappa_mean2_tmp(0) * delta_n_tmp(0) * (n-2) - 3 * delta_n_tmp(0) * kappa_mean2_old(0); // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
-//               kappa_mean2_tmp(0) = kappa_mean2_tmp(0) + kappa_mean2_old(0); // M2 = M2 + term1
-//             
-//             kappa_mean[k] = kappa_mean_tmp;
-//             kappa_mean2[k] = kappa_mean2_tmp;
-//             kappa_mean3[k] = kappa_mean3_tmp;
-//             } //only after burnin
-//         };
-//         
-//     };
-//     
-//     // calculate the acceptance rate
-//     Rcpp::List ac_rate(p);
-//     for (int i = 0; i < p; ++i) {
-//         double accept = ac_list(i);
-//         double acceptrate = accept / (1.0 * nIter);
-//         ac_rate[i] = acceptrate;
-//     }
-//     Rcpp::List itercounterList(1);
-//     itercounterList[0]=itercounter;
+     
+     Rprintf("End init");
+     
+     ////////////////////////////////////////////////////////////////////////////
+     // ITERATION
+     // loop for number of iterations "nIter"+"burnin" 
+     // C++ begin in 0 !!!   important for loops
+     for (int n_mcmc = 1; n_mcmc <= (nIter+burnin); ++n_mcmc) {
+         // if (Progress::check_abort() )
+         //     return -1.0;
+         pro.increment();
+         
+          if (n_mcmc>burnin){
+            itercounter++;}
+          
+         // Update regression coefficients, one at a time
+         // loop for covariates p 
+         for (int k = 0; k < p; ++k) {
+             
+             // initialise required matrices Z and K and coefficient gamma and kappa
+             // set ._k for required calculations
+             Z_k = Z(k);                     // design matrix
+             K_k = K(k);                     // penalty/structure matrix
+             K_rk = K_rank(k);               // rank of penalty/structure matrix
+             std::string solv = solver(k);   // which solver should be used
+             std::string lin_con = lin_constraint(k); // linear constraint necessary?
+             //gamma_matrix = coef_results(k); // // coefficient matrix
+             gamma_current = coef_results(k); // current gamma for simpler calculation
+             ka_vector = ka_values(k);   // vector for precision parameter
+             mu = mu_results(k);             // previous value for expectation
+             v_hist = v_history(k);          // history of v, linear constraint
+             it_sampling = iterative_sampling(k);    // number of iterations in lanczos
+             int max_iter_of_lanczos = m_iter(k);    // max-lanczos-iterations
+             ////////////////////////////////////////////////////////////////////
+             
+             
+             // First calculate the log-likelihood and 
+             // eta_tmp = eta + Z_k * (mu - gamma), i.e. no requirement of log|Q|
+             ll = loglike(y, eta, family, link, Ntrials);
+             eta_tmp = eta + Z_k * (mu - gamma_current);
+             
+             // calculate weight matrix W and working observations
+             IWLS iwls = compute(y, eta_tmp, family, link, Ntrials);
+             W = iwls.W;
+             y_tilde = iwls.y_tilde;
+             
+             // calculate one time for efficiency Z'W
+             ZtW = Z_k.transpose() * W;
+             
+             // calculate Q (precision) matrix 
+             Q = ZtW * Z_k + ka_vector * K_k;
+             
+             // calculate b;  b =  Z'_{k} W * (y_tilde - eta_{-k})
+             b = ZtW * (y_tilde - (eta_tmp - Z_k * mu) ); 
+             
+             
+             // sample from gaussian distribution
+             // depending on solver 'rue' or 'lanczos'
+             if (solv == "rue") {
+                 // simple Rue-block-algorithm; see file "rue.cpp"/"rue.hpp"
+                 // include linear-constraint if needed
+                 RueSolv rue_solver = algorithm(Q, b, lin_con);
+                 gamma_proposal = rue_solver.ga;
+                 mu_tmp = rue_solver.mu;
+                 
+             } else {
+                 // Lanczos approximation of x ~ N(0, Q^{-1})
+                 // first calculate incomplete cholesky; see file "misc.cpp"/"misc.hpp"
+                 M = ichol(Q);
+                 Mt = M.transpose();
+                 
+                 // Lanczos algorithm; see file "lanczos.cpp"/"lanczos.hpp"
+                 Lanczos lanczos_solver = algorithm(Q, max_iter_of_lanczos, M, Mt, thr);
+               
+                 // save number of lanczos-iteration
+                 it_sampling(n_mcmc - 1) = lanczos_solver.Iteration;
+                 iterative_sampling[k] = it_sampling;
+                 m_iter[k] = it_sampling(n_mcmc - 1) + 10;
+                 if (lanczos_solver.Iteration >= m) {
+                     Rcpp::Rcout << "Number of lanczos-iteration <= " << m <<" in iteration " 
+                                 << n_mcmc << ". Set m higher (>" << m << ")" << std::endl;
+                 }
+                 
+                 // sample from N(0, Q^{-1})
+                 x = lanczos_solver.x;
+                 
+                 // solve linear system Q*mu = b
+                 Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, 
+                                          Eigen::Lower|Eigen::Upper, 
+                                          Eigen::IncompleteCholesky<double> > iccg(Q);
+                 iccg.setTolerance(thr);     // set tolerance threshold for convergence
+                 iccg.solveWithGuess(b, mu); // guess initial solution for eventually faster solving
+                 mu_tmp = iccg.solve(b);
+                 
+                 // proposal for gamma ~ N(mu, Q^{-1}), i.e. gamma = x + mu
+                 gamma_proposal = x + mu_tmp;
+                 
+                 // apply linear constraint if needed
+                 if (lin_con == "TRUE") {
+                     // get number of parameters
+                     unsigned int n = gamma_proposal.rows();
+                     Eigen::VectorXd At = Eigen::VectorXd::Ones(n);
+                     Eigen::VectorXd e = Eigen::VectorXd::Zero(1);
+                     Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, 
+                                              Eigen::Lower|Eigen::Upper, 
+                                              Eigen::IncompleteCholesky<double> > iccgOfA(Q);
+                     iccgOfA.setTolerance(thr);          // set tolerance threshold for convergence
+                     iccgOfA.solveWithGuess(b, v_hist);  // guess initial solution for eventually faster solving
+                     Eigen::VectorXd v = iccgOfA.solve(At);
+                     
+                     v_history[k] = v;
+                     
+                     gamma_proposal = gamma_proposal - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * gamma_proposal - e);
+                     mu_tmp = mu_tmp - v * ( (At.transpose() * v).cwiseInverse() ) * (At.transpose() * mu_tmp - e);
+                 }
+                 
+             };
+             
+             // compute eta and loglikelihood
+             Eigen::VectorXd eta_tmp_proposal = eta_tmp + Z_k * (gamma_proposal - mu);
+             ll_proposal = loglike(y, eta_tmp_proposal, family, link, Ntrials);
+              
+             // compute p(ga_c | \mu^p, Q^p)
+             proposal_c_given_p = -0.5 * ( (gamma_current - mu).transpose() * Q * (gamma_current - mu) );
+             
+             // compute p(ga_p | \mu^c, Q^c)  
+             proposal_p_given_c = -0.5 * ( (gamma_proposal - mu).transpose() * Q * (gamma_proposal - mu) );
+             
+             // compute p(ga_c | \ka^c)
+             prior_c = - (ka_vector * 0.5) * gamma_current.transpose() * K_k * gamma_current;
+             
+             // compute p(ga_p | \ka^c)
+             prior_p = - (ka_vector * 0.5) * gamma_proposal.transpose() * K_k * gamma_proposal;
+             
+             // acceptance probability
+             alpha = (ll_proposal + prior_p + proposal_c_given_p) - (ll + prior_c + proposal_p_given_c); 
+             
+             // accept or reject the proposal?
+             u = (random_uniform(1)).array().log(); // sample from file "misc.cpp"/"misc.hpp"
+             if (alpha(0) > u(0)) {
+               gamma_current = gamma_proposal;
+                 coef_results[k] = gamma_current;
+                 mu_results[k] = mu_tmp;
+                 eta = eta_tmp_proposal;   
+                 if (n_mcmc>burnin){
+                   // increase accept
+                 int accept = ac_list(k);
+                 accept += 1;
+                 ac_list[k] = accept;
+                 }
+                 
+             } else {
+                 mu_results[k] = mu;
+             }
+              
+              
+             // update kappa_k by sampling from  
+             // ~ Ga(kappa_alpha + rk(K_i)/2 , kappa_beta + gamma_k ' * K_k * gamma_k / 2)
+             ka_tmp = ka_values(k);
+             // ToDo: ka_alpha ist fix, in vorbereitung verschieben
+             double ka_alpha = ka_tmp.coeff(0, 0) + 0.5 * K_rk(0);
+             double ka_beta = ka_tmp.coeff(1, 0);
+             ka_beta = ka_beta +  0.5 * (gamma_current.col(0)).transpose() * K_k * gamma_current.col(0);
+              
+             ka_vector = random_gamma(1, ka_alpha, 1.0/ka_beta);
+             kappa_results[k] = ka_vector;
+              
+             
+             // save results
+             if (n_mcmc>burnin)
+             {
+               
+               double n=itercounter;
+               
+               Eigen::VectorXd gamma_tmp = gamma_current;
+               Eigen::VectorXd gamma_mean_old = gamma_mean[k];
+               Eigen::VectorXd gamma_mean2_old = gamma_mean2[k];
+               Eigen::VectorXd gamma_mean3_old = gamma_mean3[k];
+               int k_size = gamma_tmp.size();
+               
+               Eigen::VectorXd gamma_mean_tmp(k_size);
+               Eigen::VectorXd gamma_mean2_tmp(k_size);
+               Eigen::VectorXd gamma_mean3_tmp(k_size);
+                
+               Eigen::VectorXd delta_tmp_g(k_size);
+               Eigen::VectorXd delta_n_tmp_g(k_size);
+                
+               delta_tmp_g = gamma_tmp-gamma_mean_old;
+               delta_n_tmp_g = delta_tmp_g/n;              //  delta_n = delta / n
+               //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
+               gamma_mean2_tmp = delta_tmp_g * delta_n_tmp_g * (n-1); // term1 = delta * delta_n * n1
+               gamma_mean_tmp = gamma_mean_old + delta_n_tmp_g; // mean = mean + delta_n
+               gamma_mean3_tmp = gamma_mean3_old + gamma_mean2_tmp * delta_n_tmp_g * (n-2) - 3 * delta_n_tmp_g * gamma_mean2_old; // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
+               gamma_mean2_tmp = gamma_mean2_tmp + gamma_mean2_old; // M2 = M2 + term1
+               
+               gamma_mean[k] = gamma_mean_tmp;
+               gamma_mean2[k] = gamma_mean2_tmp;
+               gamma_mean3[k] = gamma_mean3_tmp;
+               
+               Eigen::VectorXd delta_tmp(1);
+               Eigen::VectorXd delta_n_tmp(1);
+             //Eigen::VectorXd delta_n2_tmp(1);
+               Eigen::VectorXd kappa_tmp(1);
+               Eigen::VectorXd kappa_mean_tmp(1);
+               Eigen::VectorXd kappa_mean2_tmp(1);
+               Eigen::VectorXd kappa_mean3_tmp(1);
+               Eigen::VectorXd kappa_mean_old(1);
+               Eigen::VectorXd kappa_mean2_old(1);
+               Eigen::VectorXd kappa_mean3_old(1);
+ 
+               kappa_tmp = ka_vector;
+//             kappa_tmp = kappa_tmp.log();
+               kappa_mean_old = kappa_mean[k];
+               kappa_mean2_old = kappa_mean2[k];
+               kappa_mean3_old = kappa_mean3[k];
+             
+             // source: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+               delta_tmp(0) = kappa_tmp(0) - kappa_mean_old(0);   //  delta = x - mean
+               delta_n_tmp(0) = delta_tmp(0)/n;              //  delta_n = delta / n
+             //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
+               kappa_mean2_tmp(0) = delta_tmp(0) * delta_n_tmp(0) * (n-1); // term1 = delta * delta_n * n1
+               kappa_mean_tmp(0) = kappa_mean_old(0) + delta_n_tmp(0); // mean = mean + delta_n
+               kappa_mean3_tmp(0) = kappa_mean3_old(0) + kappa_mean2_tmp(0) * delta_n_tmp(0) * (n-2) - 3 * delta_n_tmp(0) * kappa_mean2_old(0); // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
+               kappa_mean2_tmp(0) = kappa_mean2_tmp(0) + kappa_mean2_old(0); // M2 = M2 + term1
+             
+               kappa_mean[k] = kappa_mean_tmp;
+               kappa_mean2[k] = kappa_mean2_tmp;
+               kappa_mean3[k] = kappa_mean3_tmp;
+         } //end save results
+         
+     }; //end loop for each covariate
+     
+     } //end n_mcmc loop
+
+     // calculate the acceptance rate
+     Rcpp::List ac_rate(p);
+     for (int i = 0; i < p; ++i) {
+         double accept = ac_list(i);
+         double acceptrate = accept / (1.0 * nIter);
+         ac_rate[i] = acceptrate;
+     }
+     
+     
+     Rcpp::List itercounterList(1);
+     itercounterList[0]=itercounter;
 //     // return lists for gamma, kappa and accept_rate 
    return Rcpp::List::create(//Rcpp::Named("coef_results") = coef_results, 
-//                               Rcpp::Named("kappa_results") = kappa_results,
-//                               Rcpp::Named("kappa_mean") = kappa_mean,
-//                               Rcpp::Named("kappa_mean2") = kappa_mean2,
-//                               Rcpp::Named("kappa_mean3") = kappa_mean3,
-//                               Rcpp::Named("gamma_mean") = gamma_mean,
-//                               Rcpp::Named("gamma_mean2") = gamma_mean2,
-//                               Rcpp::Named("gamma_mean3") = gamma_mean3,
-//                               Rcpp::Named("iterationcounter") = itercounterList,
-//                               Rcpp::Named("accept_rate") = ac_rate,
+                             //  Rcpp::Named("kappa_results") = kappa_results,
+                               Rcpp::Named("kappa_mean") = kappa_mean,
+                               Rcpp::Named("kappa_mean2") = kappa_mean2,
+                               Rcpp::Named("kappa_mean3") = kappa_mean3,
+                               Rcpp::Named("gamma_mean") = gamma_mean,
+                               Rcpp::Named("gamma_mean2") = gamma_mean2,
+                               Rcpp::Named("gamma_mean3") = gamma_mean3,
+                               Rcpp::Named("iterationcounter") = itercounterList,
+                               Rcpp::Named("accept_rate") = ac_rate,
                               Rcpp::Named("lanzcos_iterations") = iterative_sampling);
 }
