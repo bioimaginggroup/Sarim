@@ -69,10 +69,9 @@
 //'          please choose link = "log". Currently no other link function is present.
 //' @param nIter Number of iterations for MCMC-algorithm
 //' @param burnin Number of iterations for burnin
-//' @param Ntrials Number of trails, only interesting for binomial distribution
+//' @param Ntrials Number of trials, only interesting for binomial distribution
 //' @param m Number of maximal Lanczos-iterations
 //' @param thr threshold when the Lanczos-algorithm or conjugate gradient-algorithm should stop
-//' @param startresult results (mean, squared and cubic means) of coefficients and kappa (and iterationcounter) from previous run
 //' 
 //' @return Return a list of values:
 //' "coef_results" = result of the estimated coefficient, output given as matrix;
@@ -93,13 +92,19 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                       const Rcpp::List & lin_constraint,
                       const Rcpp::String & family,
                       const Rcpp::String & link,
-                      const double & Ntrials,
                       const int & nIter,
                       const int & burnin,
+                      const double & Ntrials,
                       const int & m,
                       const double & thr,
+                      const Rcpp::List & gammamean,         // mean for gamma values
+                      const Rcpp::List & gamma2mean,        // mean for gamma values
+                      const Rcpp::List & gamma3mean,        // mean for gamma values
+                      const Rcpp::List & kappamean,         // mean for gamma values
+                      const Rcpp::List & kappa2mean,        // mean for gamma values
+                      const Rcpp::List & kappa3mean,        // mean for gamma values
+                      const int & iterationcounter,
                       const bool & display_progress = true) {
-    
     
     // display progress bar
     Progress pro(nIter+burnin, display_progress);
@@ -109,8 +114,9 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     
     // number of observations
     int n = y.rows();
-    
-    
+
+    Rprintf("%d\n",nIter);
+
     ////////////////////////////////////////////////////////////////////////////
     // generate list for further calculations and better output for R
     Rcpp::List coef_results(p);         // list for coefficients
@@ -119,15 +125,16 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     Rcpp::List iterative_sampling(p);   // list for iterative samples in lanczos-algo
     Rcpp::List kappa_results(p);        // list for kappa values
     Rcpp::List m_iter(p);               // list for max-lanczos-iterations
-
-    Rcpp::List gamma_mean(p);//=startresults[1];        // mean for gamma values
+  
+    Rcpp::List gamma_mean(p);
     Rcpp::List gamma_mean2(p);//=startresults[2];        // squared mean for gamma values
     Rcpp::List gamma_mean3(p);//=startresults[3];        // cubic mean for gamma values
     Rcpp::List kappa_mean(p);//=startresults[4];        // mean for kappa values
     Rcpp::List kappa_mean2(p);//=startresults[5];        // squared mean for kappa values
     Rcpp::List kappa_mean3(p);//=startresults[6];        // cubic mean for kappa values
-    int iterationcounter = 0;//startresults[7];
-    
+
+    int itercounter = iterationcounter;
+
     for (int i = 0; i < p; ++i) {
         // gamma matrix 
         Eigen::VectorXd gamma_tmp = gamma(i);
@@ -142,14 +149,20 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         kappa_results_tmp(0) = kappa_tmp;
         kappa_results[i] = kappa_results_tmp;
         
-        Eigen::VectorXd kappa_mean_tmp = Eigen::VectorXd::Zero(1);
-        kappa_mean[i] = kappa_mean_tmp;
+        Eigen::VectorXd kappa_mean_tmp;
+        kappa_mean_tmp = kappamean[i];
+        kappa_mean[i] = kappa_mean_tmp; 
+        kappa_mean_tmp = kappa2mean[i];
         kappa_mean2[i] = kappa_mean_tmp;
+        kappa_mean_tmp = kappa3mean[i];
         kappa_mean3[i] = kappa_mean_tmp;
 
-        Eigen::MatrixXd gamma_mean_tmp = Eigen::VectorXd::Zero(k_size);
+        Eigen::VectorXd gamma_mean_tmp;
+        gamma_mean_tmp=gammamean[i];
         gamma_mean[i] = gamma_mean_tmp;
+        gamma_mean_tmp=gamma2mean[i];
         gamma_mean2[i] = gamma_mean_tmp;
+        gamma_mean_tmp=gamma3mean[i];
         gamma_mean3[i] = gamma_mean_tmp;
 
         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
@@ -164,7 +177,6 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         // starting value for lanczos-algo
         m_iter[i] = m;
     };
-    
 
     // list for acceptance rate
     int ac = 0;
@@ -184,7 +196,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         eta += Z_tmp * gamma_tmp;
     };
     */
-    
+
     // initialise values, required for computation
     Eigen::SparseMatrix<double> Z_k, K_k, Q, W, ZtW, M, Mt;
     Eigen::MatrixXd gamma_matrix, gamma_current;
@@ -283,7 +295,6 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
     }
     // end initalisation
     
-    
     ////////////////////////////////////////////////////////////////////////////
     // ITERATION
     // loop for number of iterations "nIter"+"burnin" 
@@ -292,6 +303,9 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         // if (Progress::check_abort() )
         //     return -1.0;
         pro.increment();
+        
+        if (n_mcmc>burnin){
+          itercounter++;}
         
         // Update regression coefficients, one at a time
         // loop for covariates p 
@@ -435,7 +449,6 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                 mu_results[k] = mu;
             }
             
-            
             // update kappa_k by sampling from  
             // ~ Ga(kappa_alpha + rk(K_i)/2 , kappa_beta + gamma_k ' * K_k * gamma_k / 2)
             ka_tmp = ka_values(k);
@@ -449,10 +462,10 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
             
             if (n_mcmc>burnin)
             {
+              
               Eigen::VectorXd gamma_t = gamma(k);
               int k_size = gamma_t.size();
-              iterationcounter++;
-              double n=iterationcounter;
+              double n=itercounter;
 
               Eigen::VectorXd gamma_tmp = gamma_matrix.col(n_mcmc);
               Eigen::VectorXd gamma_mean_old = gamma_mean[k];
@@ -509,8 +522,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         };
         
     };
-    
-    
+ 
     // calculate the acceptance rate
     Rcpp::List ac_rate(p);
     for (int i = 0; i < p; ++i) {
@@ -518,9 +530,10 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         double acceptrate = accept / (1.0 * nIter);
         ac_rate[i] = acceptrate;
     }
-    
+    Rcpp::List itercounterList(1);
+    itercounterList[0]=itercounter;
     // return lists for gamma, kappa and accept_rate 
-    return Rcpp::List::create(Rcpp::Named("coef_results") = coef_results, 
+   return Rcpp::List::create(Rcpp::Named("coef_results") = coef_results, 
                               Rcpp::Named("kappa_results") = kappa_results,
                               Rcpp::Named("kappa_mean") = kappa_mean,
                               Rcpp::Named("kappa_mean2") = kappa_mean2,
@@ -528,7 +541,7 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                               Rcpp::Named("gamma_mean") = gamma_mean,
                               Rcpp::Named("gamma_mean2") = gamma_mean2,
                               Rcpp::Named("gamma_mean3") = gamma_mean3,
+                              Rcpp::Named("iterationcounter") = itercounterList,
                               Rcpp::Named("accept_rate") = ac_rate,
                               Rcpp::Named("lanzcos_iterations") = iterative_sampling);
-
 }

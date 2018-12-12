@@ -1,4 +1,5 @@
-psrf<-function(out,T){
+psrf<-function(out){
+  T<-sum(unlist(lapply(out,function(x)return(unlist(x$iterationcounter)))))
 nc<-length(out)
 m<-parallel::mclapply(out,function(x)return(c(unlist(x$gamma_mean),
   unlist(x$kappa_mean))))
@@ -32,6 +33,6 @@ R2.random <- (1 + 1/nc) * (1/T) * (b/w)
 R2.estimate <- R2.fixed + R2.random
 psrf.my <- sqrt(df.adj * R2.estimate)
 psrf.my[is.nan(psrf.my)] <- 2^6
-print(summary(psrf.my))
+#print(summary(psrf.my))
 return(max(psrf.my))
 }

@@ -65,42 +65,40 @@ Lanczos algorithm (const Eigen::SparseMatrix<double> & Q,
                    const double & thr) 
 {
     Lanczos lanczos_solver;
-    
+    int coco=0;
     int iter; 
     int n = Q.cols();
-    
+
     Eigen::VectorXd z = random_gauss(n);
-    
+
     Eigen::MatrixXd V (n, m + 1);
-    
+
     V.col(0) = z / z.norm();
-    
+
     Eigen::VectorXd beta = Eigen::VectorXd::Zero(m + 1);
     Eigen::VectorXd alpha = Eigen::VectorXd::Zero(m);
-    
+
     Eigen::VectorXd w, x = Eigen::VectorXd::Zero(n);
     Eigen::VectorXd x_old = x;
     Eigen::MatrixXd T;
-    
+
     Eigen::VectorXd err = alpha;
-    
+
     Eigen::VectorXd a = x;
     Eigen::VectorXd b = a;
-    
+
 
     Eigen::SparseLU<Eigen::SparseMatrix<double> > LUF1(F1); 
     Eigen::SparseLU<Eigen::SparseMatrix<double> > LUF2(F2); 
-    
-    
-    
+
     for (int j = 0; j < m; j++) {
-        iter = j + 1;
-        x_old = x;
-        
-        a = LUF2.solve(V.col(j));
+      iter = j + 1;
+      x_old = x;
+      double temp;
+      a = LUF2.solve(V.col(j));
         b = Q * a;
         w = LUF1.solve(b);
-        
+
         if(j > 0) {
             w -= beta(j) * V.col(j - 1);
         }
@@ -112,7 +110,7 @@ Lanczos algorithm (const Eigen::SparseMatrix<double> & Q,
         beta(j + 1) = w.norm();
         
         V.col(j + 1) = w / w.norm();
-        
+
         if (j > 1) {
             T = tri_mat_creation (j + 1, alpha, beta);
             Eigen::VectorXd e1 = Eigen::VectorXd::Zero(j + 1);
@@ -123,9 +121,8 @@ Lanczos algorithm (const Eigen::SparseMatrix<double> & Q,
                 break;
             }
         }
-        
     }
-    
+
     lanczos_solver.x = LUF2.solve(x);
     lanczos_solver.error = err;
     lanczos_solver.Iteration = iter;
