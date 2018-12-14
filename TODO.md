@@ -1,13 +1,12 @@
 # ToDo
 
-## Parallelisierung
+## Effizienz
 
-* rcppparallel, mclapply oder openmpi?
-* Testen mit größeren Daten (sim_poisson etc)
+* evtl mehr mit rcppparallel oder openmpi?
+* kappa samplen, gamma nicht
+* Gauss-Fall
+* dqrng oder nicht oder Alternative
 
-## Diagnostik
-
-* coda oder selbst?
 
 ## Frontend
 

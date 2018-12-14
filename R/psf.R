@@ -15,11 +15,19 @@ mmt<-m-mtotal
 
 b = T*(apply(mmt^2,1,sum))/(nc-1)
 w = apply(v,1,mean)
-
 var.w <- apply(v, 1, stats::var)/nc
 var.b <- (2 * b^2)/(nc - 1)
-cov.wb <- (T/nc) * diag(stats::var(t(v), t(m^2)) - 2 * 
-                                  mtotal * stats::var(t(v), t(m)))
+
+varvec<-function(i,v,m)
+{
+  return(var(v[i,],m[i,]))
+}
+C<-dim(v)[1]
+#st1 <- stats::var(t(v), t(m))
+st1 <- unlist(mclapply(1:C,varvec,v,m))
+#st2 <- stats::var(t(v), t(m^2))
+st2 <- unlist(mclapply(1:C,varvec,v,m^2))
+cov.wb <- (T/nc) * (st2 - 2 * mtotal * st1)
 
 V <- (T - 1) * w/T + (1 + 1/nc) * b/T
 var.V <- ((T - 1)^2 * var.w + (1 + 1/nc)^2 * var.b + 
