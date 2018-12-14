@@ -68,7 +68,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
             gammaList[[1]] <- c(stats::rnorm(n = 1, sd = 0.1))
             kappaList[[1]] <- c(1, 0.00001)
             K[[1]] <- as(as.matrix(1), "dgCMatrix")
-            K_rk[[1]] <- Matrix::rankMatrix(K[[1]])[1] # big memory?
+            K_rk[[1]] <- Matrix::rankMatrix(K[[1]])[1] 
             Z[[1]] <- as(as.matrix(rep(1, length(y)), nrow = length(y)), "dgCMatrix")
             
             # differ between vector and matrix as input feature
