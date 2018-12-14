@@ -39,8 +39,7 @@ W.df <- (2 * w^2)/var.w
 R2.fixed <- (T - 1)/T
 R2.random <- (1 + 1/nc) * (1/T) * (b/w)
 R2.estimate <- R2.fixed + R2.random
-psrf.my <- sqrt(df.adj * R2.estimate)
-psrf.my[is.nan(psrf.my)] <- 2^6
+psrf.my <- sqrt(abs(df.adj * R2.estimate))
 #print(summary(psrf.my))
 return(max(psrf.my))
 }

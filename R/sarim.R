@@ -27,6 +27,9 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                   family = "gaussian", link = "identity",
                   sigma = 0.1, sigma_a = 0.0001, sigma_b = 0.0001, Ntrials = 1L,
                   m = 250L, thr = 0.0001) {
+  
+    nIter =50L
+    burnin = 50L
     mf <- stats::model.frame(formula = formula, data = data)
     y <- as.numeric(stats::model.response(mf))
     
@@ -68,7 +71,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
             gammaList[[1]] <- c(stats::rnorm(n = 1, sd = 0.1))
             kappaList[[1]] <- c(1, 0.00001)
             K[[1]] <- as(as.matrix(1), "dgCMatrix")
-            K_rk[[1]] <- Matrix::rankMatrix(K[[1]])[1] # big memory?
+            K_rk[[1]] <- Matrix::rankMatrix(K[[1]])[1] 
             Z[[1]] <- as(as.matrix(rep(1, length(y)), nrow = length(y)), "dgCMatrix")
             
             # differ between vector and matrix as input feature
@@ -202,7 +205,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       kappa_mean<-kappa_mean2<-kappa_mean3<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
       
       itercounter<-lapply(1:4,function(i)return(0))
-
+      cat("\n")
       while(!burnin)                     
       {
        out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
@@ -236,14 +239,12 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 gamma_mean, gamma_mean2, gamma_mean3,
                                 kappa_mean, kappa_mean2, kappa_mean3,
                                 itercounter 
-                     ,mc.cores = 4
+                     ,mc.cores = 4, mc.set.seed = FALSE
                      )
      # print(out)
       p<-psrf(out)
-      print(paste("gelman says:",p))
       burnin <- (p<1.05)
-      ## last coef_results should be starting value for gamma 
-      last <- nIter + initialburnin
+      cat(paste0("Computing burnin: ",out[[1]]$iterationcounter[[1]], " iterations done. R = ",round(p,2),"\n"))
       
       for (i in 1:length(out))
       {
@@ -273,12 +274,11 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
           itercounter[[i]]=out[[i]]$iterationcounter[[1]]
         }
         }
-      print(c(out[[1]]$iterationcounter[[1]],p))
-      
+
       initalburnin <- 0
-      #print(burnin)
       }
       
+      cat("Burnin done, sampling...\n")
       itercounter<-lapply(1:4,function(i)return(0))
       kappa_mean<-gamma_mean<-list()
       gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
@@ -325,7 +325,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
         #                 "accept_rate" = out$accept_rate,
         #                 "lanzcos_iterations" = out$lanzcos_iterations)
     }
-    
+    cat("\n")
     
     return(list_out)
 }
