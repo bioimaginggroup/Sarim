@@ -35,7 +35,6 @@
 
 #include <RcppEigen.h>
 #include <random>
-#include <dqrng_distribution.h>
 
 Eigen::SparseMatrix<double> ichol (const Eigen::SparseMatrix<double> & Q);
 
