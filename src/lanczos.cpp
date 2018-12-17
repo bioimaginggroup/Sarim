@@ -65,7 +65,7 @@ Lanczos algorithm (const Eigen::SparseMatrix<double> & Q,
                    const double & thr) 
 {
     Lanczos lanczos_solver;
-    int coco=0;
+//    int coco=0;
     int iter; 
     int n = Q.cols();
 
@@ -94,7 +94,7 @@ Lanczos algorithm (const Eigen::SparseMatrix<double> & Q,
     for (int j = 0; j < m; j++) {
       iter = j + 1;
       x_old = x;
-      double temp;
+//      double temp;
       a = LUF2.solve(V.col(j));
         b = Q * a;
         w = LUF1.solve(b);
