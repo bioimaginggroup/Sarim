@@ -239,7 +239,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 gamma_mean, gamma_mean2, gamma_mean3,
                                 kappa_mean, kappa_mean2, kappa_mean3,
                                 itercounter 
-                     ,mc.cores = 4, mc.set.seed = FALSE
+                     ,mc.cores = 4, mc.set.seed = TRUE
                      )
      # print(out)
       p<-psrf(out)
