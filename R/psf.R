@@ -4,7 +4,7 @@ nc<-length(out)
 m<-parallel::mclapply(out,function(x)return(c(unlist(x$gamma_mean),
   unlist(x$kappa_mean))))
 v<-parallel::mclapply(out,function(x)return(c(unlist(x$gamma_mean2),
-  unlist(x$kappa_mean2))))
+  unlist(x$kappa_mean2))/(T-1)))
 p<-length(m[[1]])
 m<-array(unlist(m),c(p,nc))
 v<-array(unlist(v),c(p,nc))

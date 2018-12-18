@@ -241,7 +241,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       p<-psrf(out)
       burnin <- (p<1.1)
       cat(paste0("Computing burnin: ",out[[1]]$iterationcounter[[1]], " iterations done. R = ",round(p,2),"\n"))
-      return(out)
+      #return(out)
       
       for (i in 1:length(out))
       {
