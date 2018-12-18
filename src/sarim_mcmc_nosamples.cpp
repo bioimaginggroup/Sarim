@@ -514,6 +514,11 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
         kappa_mean_tmp(0) = kappa_mean_old(0) + delta_n_tmp(0); // mean = mean + delta_n
         kappa_mean3_tmp(0) = kappa_mean3_old(0) + kappa_mean2_tmp(0) * delta_n_tmp(0) * (n-2) - 3 * delta_n_tmp(0) * kappa_mean2_old(0); // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
         kappa_mean2_tmp(0) = kappa_mean2_tmp(0) + kappa_mean2_old(0); // M2 = M2 + term1
+
+        Rprintf("iter %f",n);
+        Rprintf(" kappa %f",kappa_tmp(0));
+        Rprintf(" mean.old %f",kappa_mean_old(0));
+        Rprintf(" mean.neu %f\n",kappa_mean_tmp(0));
         
         kappa_mean[k] = kappa_mean_tmp;
         kappa_mean2[k] = kappa_mean2_tmp;

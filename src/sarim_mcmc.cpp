@@ -490,34 +490,31 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
               gamma_mean2[k] = gamma_mean2_tmp;
               gamma_mean3[k] = gamma_mean3_tmp;
               
-              Eigen::VectorXd delta_tmp(1);
-              Eigen::VectorXd delta_n_tmp(1);
-            //Eigen::VectorXd delta_n2_tmp(1);
-              Eigen::VectorXd kappa_tmp(1);
-              Eigen::VectorXd kappa_mean_tmp(1);
-              Eigen::VectorXd kappa_mean2_tmp(1);
-              Eigen::VectorXd kappa_mean3_tmp(1);
+              Eigen::VectorXd kappa(1);
               Eigen::VectorXd kappa_mean_old(1);
-              Eigen::VectorXd kappa_mean2_old(1);
-              Eigen::VectorXd kappa_mean3_old(1);
-              kappa_tmp = ka_vector.row(n_mcmc);
-//              kappa_tmp = kappa_tmp.log();
+              Eigen::VectorXd kappa_mean_new(1);
+              Eigen::VectorXd kappa_mean2_tmp(1);
+              Eigen::VectorXd delta(1);
+              Eigen::VectorXd delta2(1);
+
+              // das hier funktioniert. kappa_mean2=n*var ! evtl 
+              kappa = ka_vector.row(n_mcmc);
               kappa_mean_old = kappa_mean[k];
-              kappa_mean2_old = kappa_mean2[k];
-              kappa_mean3_old = kappa_mean3[k];
+              delta = kappa - kappa_mean_old;
+              kappa_mean_new = kappa_mean_old + (delta/n);
+              delta2 = kappa - kappa_mean_new;
+              kappa_mean2_tmp = kappa_mean2[k];
+              kappa_mean2_tmp = kappa_mean2_tmp + (delta*delta2);
+              
+              
+            Rprintf("iter %f",n);
+            Rprintf(" kappa %f",kappa(0));
+            Rprintf(" mean.old %f",kappa_mean_old(0));
+            Rprintf(" mean.neu %f",kappa_mean_new(0));
+            Rprintf(" mean2 %f\n",kappa_mean2_tmp(0));
             
-            // source: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-              delta_tmp(0) = kappa_tmp(0) - kappa_mean_old(0);   //  delta = x - mean
-              delta_n_tmp(0) = delta_tmp(0)/n;              //  delta_n = delta / n
-            //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
-              kappa_mean2_tmp(0) = delta_tmp(0) * delta_n_tmp(0) * (n-1); // term1 = delta * delta_n * n1
-              kappa_mean_tmp(0) = kappa_mean_old(0) + delta_n_tmp(0); // mean = mean + delta_n
-              kappa_mean3_tmp(0) = kappa_mean3_old(0) + kappa_mean2_tmp(0) * delta_n_tmp(0) * (n-2) - 3 * delta_n_tmp(0) * kappa_mean2_old(0); // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
-              kappa_mean2_tmp(0) = kappa_mean2_tmp(0) + kappa_mean2_old(0); // M2 = M2 + term1
-            
-            kappa_mean[k] = kappa_mean_tmp;
+            kappa_mean[k] = kappa_mean_new;
             kappa_mean2[k] = kappa_mean2_tmp;
-            kappa_mean3[k] = kappa_mean3_tmp;
             } //only after burnin
         };
         
