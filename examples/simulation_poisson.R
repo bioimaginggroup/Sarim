@@ -31,7 +31,7 @@ scalefun <- function(z) {
 }
 
 # number of pixels and generate "picture" with scaling form [-0.5, 0.5]
-nx <-10
+nx <- 60
 x <- seq(1, nx) 
 mat <- data.frame("x" = rep(x, each = length(x)), "y" = rep(x, length(x)))
 im1 <- matrix(f1(mat$x, mat$y, nx, nx), nrow = length(x))
@@ -51,7 +51,7 @@ filled.contour(x = x, y = x, z = im3, nlevels = 40,
                color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
 
 # generate z values
-m <- 50
+m <- 100
 #set.seed(042018)
 z1 <- runif(m, -1, 1)
 z2 <- runif(m, -1, 1)
@@ -109,7 +109,7 @@ out <- sarim(y ~
                       sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
                          ka_start = 50, ka_a = 1, ka_b = 0.00005), 
                   family = "poisson", link = "log",
-                  data = df, nIter = 50, burnin=10, intercept = "FALSE") 
+                  data = df, nIter = 250, burnin=11, intercept = "FALSE") 
 })
 
 # #Time difference of 1.488806 hours

@@ -28,8 +28,6 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                   sigma = 0.1, sigma_a = 0.0001, sigma_b = 0.0001, Ntrials = 1L,
                   m = 250L, thr = 0.0001) {
   
-    nIter =50L
-    burnin = 50L
     mf <- stats::model.frame(formula = formula, data = data)
     y <- as.numeric(stats::model.response(mf))
     
@@ -243,7 +241,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                      )
      # print(out)
       p<-psrf(out)
-      burnin <- (p<1.05)
+      burnin <- (p<1.1)
       cat(paste0("Computing burnin: ",out[[1]]$iterationcounter[[1]], " iterations done. R = ",round(p,2),"\n"))
       
       for (i in 1:length(out))

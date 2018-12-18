@@ -40,6 +40,8 @@ R2.fixed <- (T - 1)/T
 R2.random <- (1 + 1/nc) * (1/T) * (b/w)
 R2.estimate <- R2.fixed + R2.random
 psrf.my <- sqrt(abs(df.adj * R2.estimate))
-#print(summary(psrf.my))
+print(summary(psrf.my))
+#plot(hist(psrf.my))
 return(max(psrf.my))
+#return(quantile(psrf.my,.9))
 }
