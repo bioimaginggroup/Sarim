@@ -92,8 +92,8 @@ sarim_gibbs <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin
 #' "lanzcos_iterations" = number of the lanczos-iteration in each step.
 #' 
 #' @export
-sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress = TRUE) {
-    .Call('_Sarim_sarim_mcmc', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress)
+sarim_mcmc_nosamples <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress = TRUE) {
+    .Call('_Sarim_sarim_mcmc_nosamples', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress)
 }
 
 #' MCMC sampler with Metropolis-Hasting step in Gibbs-sampler for use in sarim()-function
@@ -137,7 +137,7 @@ sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_
 #' "lanzcos_iterations" = number of the lanczos-iteration in each step.
 #' 
 #' @export
-sarim_mcmc_nosamples <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress = TRUE) {
-    .Call('_Sarim_sarim_mcmc_nosamples', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress)
+sarim_mcmc <- function(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, kappamean, kappa2mean, iterationcounter, display_progress = TRUE) {
+    .Call('_Sarim_sarim_mcmc', PACKAGE = 'Sarim', y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, kappamean, kappa2mean, iterationcounter, display_progress)
 }
 

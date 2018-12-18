@@ -57,40 +57,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// sarim_mcmc
-Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd>& y, const Rcpp::List& Z, const Rcpp::List& K, const Rcpp::List& K_rank, const Rcpp::List& gamma, const Rcpp::List& ka_start, const Rcpp::List& ka_values, const Rcpp::List& solver, const Rcpp::List& lin_constraint, const Rcpp::String& family, const Rcpp::String& link, const int& nIter, const int& burnin, const double& Ntrials, const int& m, const double& thr, const Rcpp::List& gammamean, const Rcpp::List& gamma2mean, const Rcpp::List& gamma3mean, const Rcpp::List& kappamean, const Rcpp::List& kappa2mean, const Rcpp::List& kappa3mean, const int& iterationcounter, const bool& display_progress);
-RcppExport SEXP _Sarim_sarim_mcmc(SEXP ySEXP, SEXP ZSEXP, SEXP KSEXP, SEXP K_rankSEXP, SEXP gammaSEXP, SEXP ka_startSEXP, SEXP ka_valuesSEXP, SEXP solverSEXP, SEXP lin_constraintSEXP, SEXP familySEXP, SEXP linkSEXP, SEXP nIterSEXP, SEXP burninSEXP, SEXP NtrialsSEXP, SEXP mSEXP, SEXP thrSEXP, SEXP gammameanSEXP, SEXP gamma2meanSEXP, SEXP gamma3meanSEXP, SEXP kappameanSEXP, SEXP kappa2meanSEXP, SEXP kappa3meanSEXP, SEXP iterationcounterSEXP, SEXP display_progressSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type K_rank(K_rankSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type ka_start(ka_startSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type ka_values(ka_valuesSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type solver(solverSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type lin_constraint(lin_constraintSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::String& >::type family(familySEXP);
-    Rcpp::traits::input_parameter< const Rcpp::String& >::type link(linkSEXP);
-    Rcpp::traits::input_parameter< const int& >::type nIter(nIterSEXP);
-    Rcpp::traits::input_parameter< const int& >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< const double& >::type Ntrials(NtrialsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type m(mSEXP);
-    Rcpp::traits::input_parameter< const double& >::type thr(thrSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type gammamean(gammameanSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type gamma2mean(gamma2meanSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type gamma3mean(gamma3meanSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type kappamean(kappameanSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type kappa2mean(kappa2meanSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type kappa3mean(kappa3meanSEXP);
-    Rcpp::traits::input_parameter< const int& >::type iterationcounter(iterationcounterSEXP);
-    Rcpp::traits::input_parameter< const bool& >::type display_progress(display_progressSEXP);
-    rcpp_result_gen = Rcpp::wrap(sarim_mcmc(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean, iterationcounter, display_progress));
-    return rcpp_result_gen;
-END_RCPP
-}
 // sarim_mcmc_nosamples
 Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd>& y, const Rcpp::List& Z, const Rcpp::List& K, const Rcpp::List& K_rank, const Rcpp::List& gamma, const Rcpp::List& ka_start, const Rcpp::List& ka_values, const Rcpp::List& solver, const Rcpp::List& lin_constraint, const Rcpp::String& family, const Rcpp::String& link, const int& nIter, const int& burnin, const double& Ntrials, const int& m, const double& thr, const Rcpp::List& gammamean, const Rcpp::List& gamma2mean, const Rcpp::List& gamma3mean, const Rcpp::List& kappamean, const Rcpp::List& kappa2mean, const Rcpp::List& kappa3mean, const int& iterationcounter, const bool& display_progress);
 RcppExport SEXP _Sarim_sarim_mcmc_nosamples(SEXP ySEXP, SEXP ZSEXP, SEXP KSEXP, SEXP K_rankSEXP, SEXP gammaSEXP, SEXP ka_startSEXP, SEXP ka_valuesSEXP, SEXP solverSEXP, SEXP lin_constraintSEXP, SEXP familySEXP, SEXP linkSEXP, SEXP nIterSEXP, SEXP burninSEXP, SEXP NtrialsSEXP, SEXP mSEXP, SEXP thrSEXP, SEXP gammameanSEXP, SEXP gamma2meanSEXP, SEXP gamma3meanSEXP, SEXP kappameanSEXP, SEXP kappa2meanSEXP, SEXP kappa3meanSEXP, SEXP iterationcounterSEXP, SEXP display_progressSEXP) {
@@ -125,13 +91,45 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sarim_mcmc
+Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd>& y, const Rcpp::List& Z, const Rcpp::List& K, const Rcpp::List& K_rank, const Rcpp::List& gamma, const Rcpp::List& ka_start, const Rcpp::List& ka_values, const Rcpp::List& solver, const Rcpp::List& lin_constraint, const Rcpp::String& family, const Rcpp::String& link, const int& nIter, const int& burnin, const double& Ntrials, const int& m, const double& thr, const Rcpp::List& gammamean, const Rcpp::List& gamma2mean, const Rcpp::List& kappamean, const Rcpp::List& kappa2mean, const int& iterationcounter, const bool& display_progress);
+RcppExport SEXP _Sarim_sarim_mcmc(SEXP ySEXP, SEXP ZSEXP, SEXP KSEXP, SEXP K_rankSEXP, SEXP gammaSEXP, SEXP ka_startSEXP, SEXP ka_valuesSEXP, SEXP solverSEXP, SEXP lin_constraintSEXP, SEXP familySEXP, SEXP linkSEXP, SEXP nIterSEXP, SEXP burninSEXP, SEXP NtrialsSEXP, SEXP mSEXP, SEXP thrSEXP, SEXP gammameanSEXP, SEXP gamma2meanSEXP, SEXP kappameanSEXP, SEXP kappa2meanSEXP, SEXP iterationcounterSEXP, SEXP display_progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type K_rank(K_rankSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type ka_start(ka_startSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type ka_values(ka_valuesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type solver(solverSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type lin_constraint(lin_constraintSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type link(linkSEXP);
+    Rcpp::traits::input_parameter< const int& >::type nIter(nIterSEXP);
+    Rcpp::traits::input_parameter< const int& >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< const double& >::type Ntrials(NtrialsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type m(mSEXP);
+    Rcpp::traits::input_parameter< const double& >::type thr(thrSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type gammamean(gammameanSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type gamma2mean(gamma2meanSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type kappamean(kappameanSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type kappa2mean(kappa2meanSEXP);
+    Rcpp::traits::input_parameter< const int& >::type iterationcounter(iterationcounterSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type display_progress(display_progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(sarim_mcmc(y, Z, K, K_rank, gamma, ka_start, ka_values, solver, lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean, gamma2mean, kappamean, kappa2mean, iterationcounter, display_progress));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_Sarim_icholCpp", (DL_FUNC) &_Sarim_icholCpp, 1},
     {"_Sarim_lanczosCpp", (DL_FUNC) &_Sarim_lanczosCpp, 5},
     {"_Sarim_sarim_gibbs", (DL_FUNC) &_Sarim_sarim_gibbs, 15},
-    {"_Sarim_sarim_mcmc", (DL_FUNC) &_Sarim_sarim_mcmc, 24},
     {"_Sarim_sarim_mcmc_nosamples", (DL_FUNC) &_Sarim_sarim_mcmc_nosamples, 24},
+    {"_Sarim_sarim_mcmc", (DL_FUNC) &_Sarim_sarim_mcmc, 22},
     {NULL, NULL, 0}
 };
 

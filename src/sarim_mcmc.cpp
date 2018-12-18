@@ -99,10 +99,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                       const double & thr,
                       const Rcpp::List & gammamean,         // mean for gamma values
                       const Rcpp::List & gamma2mean,        // mean for gamma values
-                      const Rcpp::List & gamma3mean,        // mean for gamma values
                       const Rcpp::List & kappamean,         // mean for gamma values
                       const Rcpp::List & kappa2mean,        // mean for gamma values
-                      const Rcpp::List & kappa3mean,        // mean for gamma values
                       const int & iterationcounter,
                       const bool & display_progress = true) {
     
@@ -128,10 +126,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
   
     Rcpp::List gamma_mean(p);
     Rcpp::List gamma_mean2(p);//=startresults[2];        // squared mean for gamma values
-    Rcpp::List gamma_mean3(p);//=startresults[3];        // cubic mean for gamma values
     Rcpp::List kappa_mean(p);//=startresults[4];        // mean for kappa values
     Rcpp::List kappa_mean2(p);//=startresults[5];        // squared mean for kappa values
-    Rcpp::List kappa_mean3(p);//=startresults[6];        // cubic mean for kappa values
 
     int itercounter = iterationcounter;
 
@@ -154,17 +150,13 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
         kappa_mean[i] = kappa_mean_tmp; 
         kappa_mean_tmp = kappa2mean[i];
         kappa_mean2[i] = kappa_mean_tmp;
-        kappa_mean_tmp = kappa3mean[i];
-        kappa_mean3[i] = kappa_mean_tmp;
-
+        
         Eigen::VectorXd gamma_mean_tmp;
         gamma_mean_tmp=gammamean[i];
         gamma_mean[i] = gamma_mean_tmp;
         gamma_mean_tmp=gamma2mean[i];
         gamma_mean2[i] = gamma_mean_tmp;
-        gamma_mean_tmp=gamma3mean[i];
-        gamma_mean3[i] = gamma_mean_tmp;
-
+        
         // mu, for eventually faster calculation of mean form gamma ~ N(mu, Q)
         mu_results[i] = 0 * gamma_tmp;
         
@@ -468,54 +460,46 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
               double n=itercounter;
 
               Eigen::VectorXd gamma_tmp = gamma_matrix.col(n_mcmc);
+              Eigen::VectorXd kappa_tmp = ka_vector.row(n_mcmc);
+              
+              Eigen::VectorXd kappa_mean_old = kappa_mean[k];
               Eigen::VectorXd gamma_mean_old = gamma_mean[k];
-              Eigen::VectorXd gamma_mean2_old = gamma_mean2[k];
-              Eigen::VectorXd gamma_mean3_old = gamma_mean3[k];
-              Eigen::VectorXd gamma_mean_tmp(k_size);
-              Eigen::VectorXd gamma_mean2_tmp(k_size);
-              Eigen::VectorXd gamma_mean3_tmp(k_size);
-            
-              Eigen::VectorXd delta_tmp_g(k_size);
-              Eigen::VectorXd delta_n_tmp_g(k_size);
               
-              delta_tmp_g = gamma_tmp-gamma_mean_old;
-              delta_n_tmp_g = delta_tmp_g/n;              //  delta_n = delta / n
-              //delta_n2_tmp(0) = delta_n_tmp(0) * delta_n_tmp(0); //  delta_n2 = delta_n * delta_n
-              gamma_mean2_tmp = delta_tmp_g * delta_n_tmp_g * (n-1); // term1 = delta * delta_n * n1
-              gamma_mean_tmp = gamma_mean_old + delta_n_tmp_g; // mean = mean + delta_n
-              gamma_mean3_tmp = gamma_mean3_old + gamma_mean2_tmp * delta_n_tmp_g * (n-2) - 3 * delta_n_tmp_g * gamma_mean2_old; // M3 = M3 + term1 * delta_n * (n - 2) - 3 * delta_n * M2
-              gamma_mean2_tmp = gamma_mean2_tmp + gamma_mean2_old; // M2 = M2 + term1
-              
-              gamma_mean[k] = gamma_mean_tmp;
-              gamma_mean2[k] = gamma_mean2_tmp;
-              gamma_mean3[k] = gamma_mean3_tmp;
-              
-              Eigen::VectorXd kappa(1);
-              Eigen::VectorXd kappa_mean_old(1);
               Eigen::VectorXd kappa_mean_new(1);
-              Eigen::VectorXd kappa_mean2_tmp(1);
+              Eigen::VectorXd gamma_mean_new(k_size);
+              
+              Eigen::VectorXd kappa_mean2_tmp = kappa_mean2[k];
+              Eigen::VectorXd gamma_mean2_tmp = gamma_mean2[k];
+              
               Eigen::VectorXd delta(1);
+              Eigen::VectorXd deltag(k_size);
+              
               Eigen::VectorXd delta2(1);
+              Eigen::VectorXd deltag2(k_size);
 
-              // das hier funktioniert. kappa_mean2=n*var ! evtl 
-              kappa = ka_vector.row(n_mcmc);
-              kappa_mean_old = kappa_mean[k];
-              delta = kappa - kappa_mean_old;
-              kappa_mean_new = kappa_mean_old + (delta/n);
-              delta2 = kappa - kappa_mean_new;
-              kappa_mean2_tmp = kappa_mean2[k];
-              kappa_mean2_tmp = kappa_mean2_tmp + (delta*delta2);
+              delta(0) = kappa_tmp(0) - kappa_mean_old(0);
+              int i;
+              for (i=0; i<k_size;i++){deltag(i) = gamma_tmp(i) - gamma_mean_old(i);}
               
+              kappa_mean_new(0) = kappa_mean_old(0) + (delta(0)/n);
+              for (i=0; i<k_size;i++){gamma_mean_new(i) = gamma_mean_old(i) + (deltag(i)/n);}
               
-            Rprintf("iter %f",n);
-            Rprintf(" kappa %f",kappa(0));
-            Rprintf(" mean.old %f",kappa_mean_old(0));
-            Rprintf(" mean.neu %f",kappa_mean_new(0));
-            Rprintf(" mean2 %f\n",kappa_mean2_tmp(0));
+              delta2(0) = kappa_tmp(0) - kappa_mean_new(0);
+              for (i=0; i<k_size;i++){deltag2(i) = gamma_tmp(i) - gamma_mean_new(i);}
+              //deltag2 = gamma_tmp - gamma_mean_new;
+              
+              kappa_mean2_tmp(0) = kappa_mean2_tmp(0) + (delta(0)*delta2(0));
+              for (i=0; i<k_size;i++){gamma_mean2_tmp(i) = gamma_mean2_tmp(i) + (deltag(i)*deltag2(i));}
+              //gamma_mean2_tmp = gamma_mean2_tmp + (deltag*deltag2);
+              
+              kappa_mean[k] = kappa_mean_new;
+              gamma_mean[k] = gamma_mean_new;
+              
+              gamma_mean2[k] = gamma_mean2_tmp;
+              kappa_mean2[k] = kappa_mean2_tmp;
+
+            } //end only after burnin
             
-            kappa_mean[k] = kappa_mean_new;
-            kappa_mean2[k] = kappa_mean2_tmp;
-            } //only after burnin
         };
         
     };
@@ -534,10 +518,8 @@ Rcpp::List sarim_mcmc(const Eigen::Map<Eigen::VectorXd> & y,
                               Rcpp::Named("kappa_results") = kappa_results,
                               Rcpp::Named("kappa_mean") = kappa_mean,
                               Rcpp::Named("kappa_mean2") = kappa_mean2,
-                              Rcpp::Named("kappa_mean3") = kappa_mean3,
                               Rcpp::Named("gamma_mean") = gamma_mean,
                               Rcpp::Named("gamma_mean2") = gamma_mean2,
-                              Rcpp::Named("gamma_mean3") = gamma_mean3,
                               Rcpp::Named("iterationcounter") = itercounterList,
                               Rcpp::Named("accept_rate") = ac_rate,
                               Rcpp::Named("lanzcos_iterations") = iterative_sampling);

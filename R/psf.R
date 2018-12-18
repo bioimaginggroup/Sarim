@@ -1,10 +1,10 @@
 psrf<-function(out){
-  T<-sum(unlist(lapply(out,function(x)return(unlist(x$iterationcounter)))))
+  T<-mean(unlist(lapply(out,function(x)return(unlist(x$iterationcounter)))))
 nc<-length(out)
 m<-parallel::mclapply(out,function(x)return(c(unlist(x$gamma_mean),
   unlist(x$kappa_mean))))
 v<-parallel::mclapply(out,function(x)return(c(unlist(x$gamma_mean2),
-  unlist(x$kappa_mean2))/(T-1)))
+  unlist(x$kappa_mean2))))
 p<-length(m[[1]])
 m<-array(unlist(m),c(p,nc))
 v<-array(unlist(v),c(p,nc))
@@ -33,15 +33,17 @@ V <- (T - 1) * w/T + (1 + 1/nc) * b/T
 var.V <- ((T - 1)^2 * var.w + (1 + 1/nc)^2 * var.b + 
             2 * (T - 1) * (1 + 1/nc) * cov.wb)/T^2
 df.V <- (2 * V^2)/var.V
+
 df.adj <- (df.V + 3)/(df.V + 1)
 B.df <- nc - 1
 W.df <- (2 * w^2)/var.w
-R2.fixed <- (T - 1)/T
 R2.random <- (1 + 1/nc) * (1/T) * (b/w)
+R2.fixed <- (T - 1)/T
 R2.estimate <- R2.fixed + R2.random
 psrf.my <- sqrt(abs(df.adj * R2.estimate))
 print(summary(psrf.my))
 #plot(hist(psrf.my))
+print(which(psrf.my==max(psrf.my)))
 return(max(psrf.my))
 #return(quantile(psrf.my,.9))
 }

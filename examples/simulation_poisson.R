@@ -98,18 +98,19 @@ df <- data.frame("y" = y)
 
 system.time({
 out <- sarim(y ~ 
-             #  sx(x = X1, knots = 1, penalty = "identity", solver = "rue", 
-             #    ka_start = 50, ka_a = 1, ka_b = 0.00005) +
-             #  sx(Z = Z1, K = K1, penalty = "gmrf", solver = "lanczos", 
-            #            ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
-              #        sx(Z = Z2, K = K2, penalty = "gmrf", solver = "lanczos", 
-              #           ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
-              #        sx(Z = Z3, K = K3, penalty = "gmrf", solver = "lanczos", 
-              #           ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") +
-                      sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
-                         ka_start = 50, ka_a = 1, ka_b = 0.00005), 
+               #sx(x = X1, knots = 1, penalty = "identity", solver = "rue", 
+                # ka_start = 50, ka_a = 1, ka_b = 0.00005) +
+               sx(Z = Z1, K = K1, penalty = "gmrf", solver = "lanczos", 
+                        ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE")# + 
+                      #sx(Z = Z2, K = K2, penalty = "gmrf", solver = "lanczos", 
+                      #   ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
+                      #sx(Z = Z3, K = K3, penalty = "gmrf", solver = "lanczos", 
+                      #   ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") +
+                      #sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
+                      #   ka_start = 50, ka_a = 1, ka_b = 0.00005)
+             , 
                   family = "poisson", link = "log",
-                  data = df, nIter = 10, burnin=0, intercept = "FALSE") 
+                  data = df, nIter = 100, burnin=111, intercept = "FALSE") 
 })
 
 # #Time difference of 1.488806 hours

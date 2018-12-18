@@ -1,8 +1,8 @@
 Package: Sarim
 Type: Package
 Title: Structured additive regression using iterative methods
-Version: 0.1.2.053
-Date: 2018-12-17
+Version: 0.1.2.074
+Date: 2018-12-18
 Author: Christopher Kuester
 Maintainer: Christopher Kuester <chkue0@gmail.com>
 Description: Using MCMC algorithm for fitting additive regression model to large-scale problems.
@@ -19,6 +19,5 @@ LinkingTo:
     Rcpp, 
     RcppEigen, 
     RcppProgress,
-    RcppZiggurat,
     dqrng
 RoxygenNote: 6.1.1
