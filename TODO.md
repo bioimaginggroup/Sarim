@@ -6,6 +6,7 @@
 * sarim_mcmc: samples als option (kappasample, nocsample in hauptfunktion)
 * Gauss-Fall
 * give rank as sarim() option (cf K_rk[[1]] <- Matrix::rankMatrix(K[[1]])[1] in sarim.R)
+* Progressbar bei parallel...
 
 ## Frontend
 
