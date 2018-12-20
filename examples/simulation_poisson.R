@@ -31,7 +31,7 @@ scalefun <- function(z) {
 }
 
 # number of pixels and generate "picture" with scaling form [-0.5, 0.5]
-nx <- 12
+nx <- 128
 x <- seq(1, nx) 
 mat <- data.frame("x" = rep(x, each = length(x)), "y" = rep(x, length(x)))
 im1 <- matrix(f1(mat$x, mat$y, nx, nx), nrow = length(x))
@@ -98,16 +98,16 @@ df <- data.frame("y" = y)
 
 system.time({
 out <- sarim(y ~ 
-               #sx(x = X1, knots = 1, penalty = "identity", solver = "rue", 
-                # ka_start = 50, ka_a = 1, ka_b = 0.00005) +
+              sx(x = X1, knots = 1, penalty = "identity", solver = "rue", 
+                ka_start = 50, ka_a = 1, ka_b = 0.00005) +
                sx(Z = Z1, K = K1, penalty = "gmrf", solver = "lanczos", 
-                        ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE")# + 
-                      #sx(Z = Z2, K = K2, penalty = "gmrf", solver = "lanczos", 
-                      #   ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
-                      #sx(Z = Z3, K = K3, penalty = "gmrf", solver = "lanczos", 
-                      #   ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") +
-                      #sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
-                      #   ka_start = 50, ka_a = 1, ka_b = 0.00005)
+                        ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
+                     sx(Z = Z2, K = K2, penalty = "gmrf", solver = "lanczos", 
+                        ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") + 
+                     sx(Z = Z3, K = K3, penalty = "gmrf", solver = "lanczos", 
+                        ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") +
+                     sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
+                        ka_start = 50, ka_a = 1, ka_b = 0.00005)
              , 
                   family = "poisson", link = "log",
                   data = df, nIter = 100, burnin=111, intercept = "FALSE") 

@@ -206,8 +206,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       cat("\n")
       while(!burnin)                     
       {
-       #out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
-       out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+       out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+       #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
                                 kappaListList, ka_values,
                                 solverList, lin_constraint,
                                 family, link,
@@ -235,7 +235,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 gamma_mean, gamma_mean2, 
                                 kappa_mean, kappa_mean2,
                                 itercounter 
-        #             ,mc.cores = 4, mc.set.seed = TRUE
+                     ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE
                      )
      # print(out)
       p<-psrf(out)
@@ -293,7 +293,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                              gamma_mean, gamma_mean2,
                                              kappa_mean, kappa_mean2,
                                              itercounter){
-        Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+        Sarim::sarim_mcmc_kappasamples(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
                           ka_start = kappaListList[[i]], ka_values = kappaList,
                           solver = solverList, lin_constraint = constraintList,
                           family = family, link = link,
@@ -311,7 +311,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
         m, thr, 
         gamma_mean, gamma_mean2, 
         kappa_mean, kappa_mean2, 
-        itercounter, mc.cores = 4)
+        itercounter
+        ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE)
          list_out <- out               
         #list_out <- list("coef_results" = out$coef_results,
         #                 "kappa_results" = out$kappa_results,

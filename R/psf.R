@@ -43,7 +43,7 @@ R2.estimate <- R2.fixed + R2.random
 psrf.my <- sqrt(abs(df.adj * R2.estimate))
 print(summary(psrf.my))
 #plot(hist(psrf.my))
-print(which(psrf.my==max(psrf.my)))
+#print(which(psrf.my==max(psrf.my)))
 return(max(psrf.my))
 #return(quantile(psrf.my,.9))
 }

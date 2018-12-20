@@ -99,10 +99,8 @@ Rcpp::List sarim_mcmc_nosamples(const Eigen::Map<Eigen::VectorXd> & y,
                       const double & thr,
                       const Rcpp::List & gammamean,         // mean for gamma values
                       const Rcpp::List & gamma2mean,        // mean for gamma values
-                      const Rcpp::List & gamma3mean,        // mean for gamma values
                       const Rcpp::List & kappamean,         // mean for gamma values
                       const Rcpp::List & kappa2mean,        // mean for gamma values
-                      const Rcpp::List & kappa3mean,        // mean for gamma values
                       const int & iterationcounter,
                       const bool & display_progress = true) {
   
