@@ -6,8 +6,8 @@
 \usage{
 sarim_mcmc_nosamples(y, Z, K, K_rank, gamma, ka_start, ka_values, solver,
   lin_constraint, family, link, nIter, burnin, Ntrials, m, thr, gammamean,
-  gamma2mean, gamma3mean, kappamean, kappa2mean, kappa3mean,
-  iterationcounter, display_progress = TRUE)
+  gamma2mean, kappamean, kappa2mean, iterationcounter,
+  display_progress = TRUE)
 }
 \arguments{
 \item{y}{Response variable, given as a vector, use as.numeric() if error occur.}
@@ -46,13 +46,11 @@ please choose link = "log". Currently no other link function is present.}
 
 \item{burnin}{Number of iterations for burnin}
 
-\item{Ntrials}{Number of trails, only interesting for binomial distribution}
+\item{Ntrials}{Number of trials, only interesting for binomial distribution}
 
 \item{m}{Number of maximal Lanczos-iterations}
 
 \item{thr}{threshold when the Lanczos-algorithm or conjugate gradient-algorithm should stop}
-
-\item{startresult}{results (mean, squared and cubic means) of coefficients and kappa (and iterationcounter) from previous run}
 }
 \value{
 Return a list of values:

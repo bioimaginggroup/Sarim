@@ -31,7 +31,7 @@ scalefun <- function(z) {
 }
 
 # number of pixels and generate "picture" with scaling form [-0.5, 0.5]
-nx <- 128
+nx <- 64
 x <- seq(1, nx) 
 mat <- data.frame("x" = rep(x, each = length(x)), "y" = rep(x, length(x)))
 im1 <- matrix(f1(mat$x, mat$y, nx, nx), nrow = length(x))
