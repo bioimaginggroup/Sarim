@@ -167,77 +167,94 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
     sigmavalues <- c(sigma_a, sigma_b)
     sigma <- as.numeric(sigma)
     
-    # Using Gibbs or Gibbs-with-MH depending on family
-    if (family == "gaussian") {
-        out <- Sarim::sarim_gibbs(y = y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
-                                  ka_start = kappa_startList, ka_values = kappaList,
-                                  solver = solverList, lin_constraint = constraintList,
-                                  sigma = sigma, sigma_values = sigmavalues,
-                                  nIter = nIter,
-                                  m = m, thr = thr)
-        list_out <- list("coef_results" = out$coef_results,
-                         "kappa_results" = out$kappa_results,
-                         "sigma_results" = out$sigma_results,
-                         "lanzcos_iterations" = out$lanzcos_iterations)
-    }
-    
-    
-    if (family != "gaussian") {
-      # out <- Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
-      #                          ka_start = kappa_startList, ka_values = kappaList,
-      #                          solver = solverList, lin_constraint = constraintList,
-      #                          family = family, link = link,
-      #                          nIter = nIter, Ntrials = Ntrials,
-      #                          m = m, thr = thr)
       initialburnin=burnin
       burnin = FALSE
       
       gammaListList <- lapply(1:4,function(i,x)return(x),x=gammaList)
       kappaListList <- lapply(1:4,function(i,x)return(x),x=kappa_startList)
+      sigmaListList <- lapply(1:4,function(i,x)return(x),x=sigma)
+
       kappa_mean<-gamma_mean<-list()
       gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
       kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
-  
-
+        
       gamma_mean<-gamma_mean2<-lapply(1:4,function(i,x)return(x),x=gamma_mean)
       kappa_mean<-kappa_mean2<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
+
+      sigma_mean<-sigma_mean2<-lapply(1:4,function(i,x)return(x),x=0)
       
       itercounter<-lapply(1:4,function(i)return(0))
       cat("\n")
       while(!burnin)                     
       {
-       out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
-       #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
-                                kappaListList, ka_values,
-                                solverList, lin_constraint,
-                                family, link,
-                                nIter, Ntrials,
-                                m, thr, 
-                                gamma_mean, gamma_mean2, 
-                                kappa_mean, kappa_mean2, 
-                                itercounter){
-                                Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
-                                          ka_start = kappaListList[[i]], ka_values = kappaList,
-                                          solver = solverList, lin_constraint = constraintList,
-                                          family = family, link = link,
-                                          nIter = nIter, burnin = initialburnin, Ntrials = Ntrials,
-                                          m = m, thr = thr, 
-                                          gammamean = gamma_mean[[i]], 
-                                          gamma2mean = gamma_mean2[[i]], 
-                                          kappamean = kappa_mean[[i]], 
-                                          kappa2mean = kappa_mean2[[i]], 
-                                          iterationcounter = itercounter[[i]]
-                                )},
-                                y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
-                                solverList, constraintList,
-                                family, link, nIter, Ntrials,
-                                m, thr, 
-                                gamma_mean, gamma_mean2, 
-                                kappa_mean, kappa_mean2,
-                                itercounter 
-                     ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE
-                     )
-     # print(out)
+        if (family != "gaussian")out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                               #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                               kappaListList, ka_values,
+                                               solverList, lin_constraint,
+                                               family, link,
+                                               nIter, Ntrials,
+                                               m, thr, 
+                                               gamma_mean, gamma_mean2, 
+                                               kappa_mean, kappa_mean2, 
+                                               itercounter){
+          Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                            ka_start = kappaListList[[i]], ka_values = kappaList,
+                            solver = solverList, lin_constraint = constraintList,
+                            family = family, link = link,
+                            nIter = nIter, burnin = initialburnin, Ntrials = Ntrials,
+                            m = m, thr = thr, 
+                            gammamean = gamma_mean[[i]], 
+                            gamma2mean = gamma_mean2[[i]], 
+                            kappamean = kappa_mean[[i]], 
+                            kappa2mean = kappa_mean2[[i]], 
+                            iterationcounter = itercounter[[i]]
+          )},
+          y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
+          solverList, constraintList,
+          family, link, nIter, Ntrials,
+          m, thr, 
+          gamma_mean, gamma_mean2, 
+          kappa_mean, kappa_mean2,
+          itercounter 
+          ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE
+        )
+        if (family == "gaussian")out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                               #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                               kappaListList, ka_values,
+                                               solverList, lin_constraint,
+                                               sigmaListList, sigmavalues,
+                                               nIter, Ntrials,
+                                               m, thr, 
+                                               gamma_mean, gamma_mean2, 
+                                               kappa_mean, kappa_mean2,
+                                               sigma_mean, sigma_mean2,
+                                               itercounter){
+          Sarim::sarim_gibbs(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                            ka_start = kappaListList[[i]], ka_values = kappaList,
+                            solver = solverList, lin_constraint = constraintList,
+                            sigma = sigmaListList[[i]], sigmavalues = sigmavalues,
+                            nIter = nIter, burnin = initialburnin, Ntrials = Ntrials,
+                            m = m, thr = thr, 
+                            gammamean = gamma_mean[[i]], 
+                            gamma2mean = gamma_mean2[[i]], 
+                            kappamean = kappa_mean[[i]], 
+                            kappa2mean = kappa_mean2[[i]], 
+                            sigmaamean = sigma_mean[[i]], 
+                            sigma2mean = sigma_mean2[[i]], 
+                            iterationcounter = itercounter[[i]]
+          )},
+          y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
+          solverList, constraintList,
+          sigmaListList, sigmavalues,
+          nIter, Ntrials,
+          m, thr, 
+          gamma_mean, gamma_mean2, 
+          kappa_mean, kappa_mean2,
+          sigma_mean, sigma_mean2,
+          itercounter 
+          ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE
+        )
+
       p<-psrf(out)
       burnin <- (p<1.1)
       cat(paste0("Computing burnin: ",out[[1]]$iterationcounter[[1]], " iterations done. R = ",round(p,2),"\n"))
@@ -252,6 +269,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
           kappaListList[[i]]<-kappaList
           gamma_mean[[i]]<-gamma_mean2[[i]]<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
           kappa_mean[[i]]<-kappa_mean2[[i]]<-lapply(1:length(kappa_startList),function(x)return(0))
+          sigma_mean<-sigma_mean2<-lapply(1:4,function(i,x)return(x),x=0)
           itercounter[[i]]<-list(0)
         }
         else
@@ -262,6 +280,11 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
           gammaListList[[i]][[j]]<-out[[i]]$coef_results[[j]][,1]
           kappaListList[[i]][[j]]<-out[[i]]$kappa_results[[j]][1]
         }
+          sigmaListList[[i]]<-out[[i]]$sigma_results[1]
+          if(family=="Gaussian"){
+            sigma_mean[[i]]<-out[[i]]$sigma_mean
+            sigma_mean2[[i]]<-out[[i]]$sigma_mean2
+          }
           gamma_mean[[i]]=out[[i]]$gamma_mean
           gamma_mean2[[i]]=out[[i]]$gamma_mean2
           kappa_mean[[i]]=out[[i]]$kappa_mean
@@ -275,7 +298,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       
       cat("Burnin done, sampling...\n")
       itercounter<-lapply(1:4,function(i)return(0))
-      kappa_mean<-gamma_mean<-list()
+      kappa_mean<-gamma_mean<-sigma_mean<-list()
       gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
       kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
       
@@ -283,7 +306,9 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       gamma_mean<-gamma_mean2<-lapply(1:4,function(i,x)return(x),x=gamma_mean)
       kappa_mean<-kappa_mean2<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
       
-      out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+      sigma_mean<-sigma_mean2<-lapply(1:4,function(i,x)return(x),x=0)
+      
+      if(family!="Gaussian")out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
                                              #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
                                              kappaListList, ka_values,
                                              solverList, lin_constraint,
@@ -313,13 +338,46 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
         kappa_mean, kappa_mean2, 
         itercounter
         ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE)
-         list_out <- out               
-        #list_out <- list("coef_results" = out$coef_results,
-        #                 "kappa_results" = out$kappa_results,
-        #                 "accept_rate" = out$accept_rate,
-        #                 "lanzcos_iterations" = out$lanzcos_iterations)
-    }
-    cat("\n")
+
+        if(family=="Gaussian")out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                                             #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                                             kappaListList, ka_values,
+                                                             solverList, lin_constraint,
+                                                             family, link,
+                                                             nIter, Ntrials,
+                                                             m, thr, 
+                                                             gamma_mean, gamma_mean2,
+                                                             kappa_mean, kappa_mean2,
+                                                             itercounter){
+      Sarim::sarim_gibbs_samples(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                                 ka_start = kappaListList[[i]], ka_values = kappaList,
+                                 solver = solverList, lin_constraint = constraintList,
+                                 sigma=sigmaListList, sigmavalues=sigmavalues,
+                                 nIter = 1000, burnin = 0, Ntrials = Ntrials,
+                                 m = m, thr = thr, 
+                                 gammamean = gamma_mean[[i]], 
+                                 gamma2mean = gamma_mean2[[i]], 
+                                 kappamean = kappa_mean[[i]], 
+                                 kappa2mean = kappa_mean2[[i]], 
+                                 sigmamean = sigma_mean[[i]], 
+                                 sigma2mean = sigma_mean2[[i]], 
+                                 iterationcounter = itercounter[[i]]
+  )},
+  y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
+  solverList, constraintList,
+  family, link, nIter, Ntrials,
+  m, thr, 
+  gamma_mean, gamma_mean2, 
+  kappa_mean, kappa_mean2, 
+  sigma_mean, sigma_mean2, 
+  itercounter
+  ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE)
+list_out <- out               
+#list_out <- list("coef_results" = out$coef_results,
+#                 "kappa_results" = out$kappa_results,
+#                 "accept_rate" = out$accept_rate,
+#                 "lanzcos_iterations" = out$lanzcos_iterations)
+cat("\n")
     
     return(list_out)
 }
