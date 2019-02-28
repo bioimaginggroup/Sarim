@@ -26,7 +26,7 @@
 sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, burnin = 100L,
                   family = "gaussian", link = "identity",
                   sigma = 0.1, sigma_a = 0.0001, sigma_b = 0.0001, Ntrials = 1L,
-                  m = 250L, thr = 0.0001) {
+                  m = 250L, thr = 0.0001, ncores=4) {
   
     mf <- stats::model.frame(formula = formula, data = data)
     y <- as.numeric(stats::model.response(mf))
@@ -167,6 +167,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
     sigmavalues <- c(sigma_a, sigma_b)
     sigma <- as.numeric(sigma)
     
+    nchains <- max(ncores, 4)
+    
     # Using Gibbs or Gibbs-with-MH depending on family
     if (family == "gaussian") {
         out <- Sarim::sarim_gibbs(y = y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
@@ -181,7 +183,6 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                          "lanzcos_iterations" = out$lanzcos_iterations)
     }
     
-    
     if (family != "gaussian") {
       # out <- Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
       #                          ka_start = kappa_startList, ka_values = kappaList,
@@ -192,21 +193,22 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       initialburnin=burnin
       burnin = FALSE
       
-      gammaListList <- lapply(1:4,function(i,x)return(x),x=gammaList)
-      kappaListList <- lapply(1:4,function(i,x)return(x),x=kappa_startList)
+      gammaListList <- lapply(1:nchains,function(i,x)return(x),x=gammaList)
+      kappaListList <- lapply(1:nchains,function(i,x)return(x),x=kappa_startList)
       kappa_mean<-gamma_mean<-list()
       gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
       kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
   
 
-      gamma_mean<-gamma_mean2<-lapply(1:4,function(i,x)return(x),x=gamma_mean)
-      kappa_mean<-kappa_mean2<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
+      gamma_mean<-gamma_mean2<-lapply(1:nchains,function(i,x)return(x),x=gamma_mean)
+      kappa_mean<-kappa_mean2<-lapply(1:nchains,function(i,x)return(x),x=kappa_mean)
       
-      itercounter<-lapply(1:4,function(i)return(0))
+      itercounter<-lapply(1:nchains,function(i)return(0))
       cat("\n")
+      cat(paste0("Using ",nchains," chains on ",ncores," cores.\n"))
       while(!burnin)                     
       {
-       out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+       out <- parallel::mclapply(1:nchains,function(i,y, Z, K, K_rk, gammaListList,
        #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
                                 kappaListList, ka_values,
                                 solverList, lin_constraint,
@@ -216,7 +218,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 gamma_mean, gamma_mean2, 
                                 kappa_mean, kappa_mean2, 
                                 itercounter){
-                                Sarim::sarim_mcmc(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                                Sarim::sarim_mcmc_kappasamples(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
                                           ka_start = kappaListList[[i]], ka_values = kappaList,
                                           solver = solverList, lin_constraint = constraintList,
                                           family = family, link = link,
@@ -234,10 +236,9 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                                 m, thr, 
                                 gamma_mean, gamma_mean2, 
                                 kappa_mean, kappa_mean2,
-                                itercounter 
-                     ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE
-                     )
-     # print(out)
+                                itercounter,
+                                mc.cores = ncores, mc.set.seed = TRUE, mc.silent=FALSE)
+      # print(out)
       p<-psrf(out)
       burnin <- (p<1.1)
       cat(paste0("Computing burnin: ",out[[1]]$iterationcounter[[1]], " iterations done. R = ",round(p,2),"\n"))
@@ -274,16 +275,16 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
       }
       
       cat("Burnin done, sampling...\n")
-      itercounter<-lapply(1:4,function(i)return(0))
+      itercounter<-lapply(1:nchains,function(i)return(0))
       kappa_mean<-gamma_mean<-list()
       gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
       kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
       
       
-      gamma_mean<-gamma_mean2<-lapply(1:4,function(i,x)return(x),x=gamma_mean)
-      kappa_mean<-kappa_mean2<-lapply(1:4,function(i,x)return(x),x=kappa_mean)
+      gamma_mean<-gamma_mean2<-lapply(1:nchains,function(i,x)return(x),x=gamma_mean)
+      kappa_mean<-kappa_mean2<-lapply(1:nchains,function(i,x)return(x),x=kappa_mean)
       
-      out <- parallel::mclapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+      out <- parallel::mclapply(1:nchains,function(i,y, Z, K, K_rk, gammaListList,
                                              #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
                                              kappaListList, ka_values,
                                              solverList, lin_constraint,
@@ -297,7 +298,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
                           ka_start = kappaListList[[i]], ka_values = kappaList,
                           solver = solverList, lin_constraint = constraintList,
                           family = family, link = link,
-                          nIter = 1000, burnin = 0, Ntrials = Ntrials,
+                          nIter = ceiling(4000/nchains), burnin = 0, Ntrials = Ntrials,
                           m = m, thr = thr, 
                           gammamean = gamma_mean[[i]], 
                           gamma2mean = gamma_mean2[[i]], 
@@ -311,8 +312,8 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
         m, thr, 
         gamma_mean, gamma_mean2, 
         kappa_mean, kappa_mean2, 
-        itercounter
-        ,mc.cores = 4, mc.set.seed = TRUE, mc.silent=FALSE)
+        itercounter,
+        mc.cores = ncores, mc.set.seed = TRUE, mc.silent=FALSE)
          list_out <- out               
         #list_out <- list("coef_results" = out$coef_results,
         #                 "kappa_results" = out$kappa_results,

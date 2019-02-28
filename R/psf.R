@@ -24,9 +24,9 @@ varvec<-function(i,v,m)
 }
 C<-dim(v)[1]
 #st1 <- stats::var(t(v), t(m))
-st1 <- unlist(mclapply(1:C,varvec,v,m))
+st1 <- unlist(parallel::mclapply(1:C,varvec,v,m))
 #st2 <- stats::var(t(v), t(m^2))
-st2 <- unlist(mclapply(1:C,varvec,v,m^2))
+st2 <- unlist(parallel::mclapply(1:C,varvec,v,m^2))
 cov.wb <- (T/nc) * (st2 - 2 * mtotal * st1)
 
 V <- (T - 1) * w/T + (1 + 1/nc) * b/T

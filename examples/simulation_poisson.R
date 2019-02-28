@@ -30,8 +30,12 @@ scalefun <- function(z) {
     return(y)
 }
 
+#timing<-c()
+for (t in 19){
+
+nx<-floor(2^(t/2))
 # number of pixels and generate "picture" with scaling form [-0.5, 0.5]
-nx <- 1024
+#nx <- 10
 x <- seq(1, nx) 
 mat <- data.frame("x" = rep(x, each = length(x)), "y" = rep(x, length(x)))
 im1 <- matrix(f1(mat$x, mat$y, nx, nx), nrow = length(x))
@@ -43,15 +47,15 @@ im3 <- scalefun(im3)
 
 
 # see original smooth image
-filled.contour(x = x, y = x, z = im1, nlevels = 40, 
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
-filled.contour(x = x, y = x, z = im2, nlevels = 40, 
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
-filled.contour(x = x, y = x, z = im3, nlevels = 40, 
-               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
+#filled.contour(x = x, y = x, z = im1, nlevels = 40, 
+#               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
+#filled.contour(x = x, y = x, z = im2, nlevels = 40, 
+#               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
+#filled.contour(x = x, y = x, z = im3, nlevels = 40, 
+#               color = colorRampPalette(rev(brewer.pal(11, "RdYlBu")))) 
 
 # generate z values
-m <- 100
+m <- 50
 #set.seed(042018)
 z1 <- runif(m, -1, 1)
 z2 <- runif(m, -1, 1)
@@ -96,7 +100,7 @@ K3 <- as(kronecker(Ps, Is) + kronecker(Is, Ps), "dgCMatrix")
 
 df <- data.frame("y" = y)
 
-system.time({
+st<-system.time({
 out <- sarim(y ~ 
               sx(x = X1, knots = 1, penalty = "identity", solver = "rue", 
                 ka_start = 50, ka_a = 1, ka_b = 0.00005) +
@@ -107,29 +111,10 @@ out <- sarim(y ~
                      sx(Z = Z3, K = K3, penalty = "gmrf", solver = "lanczos", 
                         ka_start = 50, ka_a = 1, ka_b = 0.00005, linear_constraint = "TRUE") +
                      sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
-                        ka_start = 50, ka_a = 1, ka_b = 0.00005)
-             , 
+                        ka_start = 50, ka_a = 1, ka_b = 0.00005), 
                   family = "poisson", link = "log",
-                  data = df, nIter = 100, burnin=111, intercept = "FALSE") 
+                  data = df, nIter = 100, burnin=111, intercept = "FALSE", ncores=24) 
 })
-
-# #Time difference of 1.488806 hours
-# n=4000
-# mean<-unlist(out$kappa_mean)
-# unlist(parallel::mclapply(out$kappa_results,function(x)mean(log(x))))
-# var<-unlist(out$kappa_mean2)/(n-1)
-# unlist(parallel::mclapply(out$kappa_results,function(x)var(log(x))))
-# skew<-sqrt(n)*unlist(out$kappa_mean3)/unlist(out$kappa_mean2)^(1.5)
-# 
-# for (k in 1:5){
-# #cp <- list(mean=mean[k], var.cov=array(var[k], c(1,1)), gamma1=skew[k])
-# #dp <- sn::cp2dp(cp, "SN")
-# #d<-x<-seq(0,50,by=0.1)
-# #for (i in 1:length(d))d[i]<-dmsn(x[i],dp=dp)
-# plot(density(out$kappa_results[[k]]))
-# #lines(x,d,col="blue")
-# lines(seq(0,50,by=0.1),dlnorm(seq(0,50,by=0.1),mean[k],var[k]))
-# }
-# 
-
-
+timing<-c(timing,st[3])
+plot(floor(2^((3:t)/2))^2,timing)
+}
