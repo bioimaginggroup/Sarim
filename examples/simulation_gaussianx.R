@@ -101,8 +101,8 @@ mod_gaussian <- Sarim::sarim(y ~ sx(Z = Z1, K = K1, penalty = "gmrf", solver = "
                       sx(x = X2, knots = 1, penalty = "identity", solver = "rue", 
                          ka_start = 50, ka_a = 1, ka_b = 0.00005), 
                   sigma = 0.05, sigma_a = 0.001, sigma_b = 0.001, 
-                  data = df, nIter = 3500, intercept = "FALSE") 
+                  data = df, nIter = 100, burnin=111, intercept = "FALSE", ncores=24) 
 time<-toc()# Time difference of 1.022992 hours
-write(c(nx,time$toc-time$tic),file="~/Dropbox/BayesDataScience/times.txt",append = TRUE)
+#write(c(nx,time$toc-time$tic),file="~/Dropbox/BayesDataScience/times.txt",append = TRUE)
 return(time$toc-time$tic)
 }

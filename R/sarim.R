@@ -171,16 +171,145 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
     
     # Using Gibbs or Gibbs-with-MH depending on family
     if (family == "gaussian") {
-        out <- Sarim::sarim_gibbs(y = y, Z = Z, K = K, K_rank = K_rk, gamma = gammaList,
-                                  ka_start = kappa_startList, ka_values = kappaList,
-                                  solver = solverList, lin_constraint = constraintList,
-                                  sigma = sigma, sigma_values = sigmavalues,
-                                  nIter = nIter,
-                                  m = m, thr = thr)
-        list_out <- list("coef_results" = out$coef_results,
-                         "kappa_results" = out$kappa_results,
-                         "sigma_results" = out$sigma_results,
-                         "lanzcos_iterations" = out$lanzcos_iterations)
+      initialburnin=burnin
+      burnin = FALSE
+
+      gammaListList <- lapply(1:nchains,function(i,x)return(x),x=gammaList)
+      kappaListList <- lapply(1:nchains,function(i,x)return(x),x=kappa_startList)
+      sigmaListList <- lapply(1:nchains,function(i,x)return(x),x=sigma)
+      kappa_mean<-gamma_mean<-sigma_mean<-list()
+      gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
+
+      gamma_mean<-gamma_mean2<-lapply(1:nchains,function(i,x)return(x),x=gamma_mean)
+      kappa_mean<-kappa_mean2<-lapply(1:nchains,function(i,x)return(x),x=kappa_mean)
+      sigma_mean<-sigma_mean2<-lapply(1:nchains,function(i)return(0))
+      
+      itercounter<-lapply(1:nchains,function(i)return(0))
+      cat("\n")
+      cat(paste0("Using ",nchains," chains on ",ncores," cores.\n"))
+      while(!burnin)                     
+      {
+      out <- parallel::mclapply(1:nchains,function(i,y, Z, K, K_rk, gammaListList,
+                                                     #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                                     kappaListList, ka_values,
+                                                     solverList, lin_constraint,
+                                                     sigmaListList, sigma_values,
+                                                     nIter, Ntrials,
+                                                     m, thr, 
+                                                     gamma_mean, gamma_mean2, 
+                                                     kappa_mean, kappa_mean2, 
+                                                     sigma_mean, sigma_mean2, 
+                                                     itercounter){
+          Sarim::sarim_gibbs_kappasamples(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                                         ka_start = kappaListList[[i]], ka_values = ka_values,
+                                         solver = solverList, lin_constraint = constraintList,
+                                         sigma = sigmaListList[[i]], sigma_values = sigmavalues,
+                                         nIter = nIter, burnin = initialburnin, Ntrials = Ntrials,
+                                         m = m, thr = thr, 
+                                         gammamean = gamma_mean[[i]], 
+                                         gamma2mean = gamma_mean2[[i]], 
+                                         kappamean = kappa_mean[[i]], 
+                                         kappa2mean = kappa_mean2[[i]], 
+                                         sigmamean = sigma_mean[[i]], 
+                                         sigma2mean = sigma_mean2[[i]], 
+                                         iterationcounter = itercounter[[i]]
+          )},
+          y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
+          solverList, constraintList, sigmaListList, sigmavalues,
+          nIter, Ntrials,
+          m, thr, 
+          gamma_mean, gamma_mean2, 
+          kappa_mean, kappa_mean2,
+          sigma_mean, sigma_mean2,
+          itercounter,
+          mc.cores = ncores, mc.set.seed = TRUE, mc.silent=FALSE)
+
+      # print(out)
+      p<-psrf(out)
+      burnin <- (p<1.1)
+      cat(paste0("Computing burnin: ",out[[1]]$iterationcounter[[1]], " iterations done. R = ",round(p,2),"\n"))
+      #return(out)
+      
+      for (i in 1:length(out))
+      {
+        if(is.null(out[[i]]))
+        {
+          print(paste("Chain",i,"failed :(")) #reset chain
+          gammaListList[[i]]<-gammaList  
+          kappaListList[[i]]<-kappa_startList
+          sigmaListList[[i]]<-sigma
+          gamma_mean[[i]]<-gamma_mean2[[i]]<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
+          kappa_mean[[i]]<-kappa_mean2[[i]]<-lapply(1:length(kappa_startList),function(x)return(0))
+          sigma_mean[[i]]<-sigma_means[[i]]<-list(0)
+          itercounter[[i]]<-list(0)
+        }
+        else
+        {
+          for (j in 1:length(out[[i]]$coef_results))
+          {
+            #last<-dim(out[[i]]$coef_results[[j]])[2]
+            gammaListList[[i]][[j]]<-out[[i]]$coef_results[[j]][,1]
+            kappaListList[[i]][[j]]<-out[[i]]$kappa_results[[j]][1]
+          }
+          sigmaListList[[i]][[1]]<-out[[i]]$sigma_results[[1]][1]
+          gamma_mean[[i]]=out[[i]]$gamma_mean
+          gamma_mean2[[i]]=out[[i]]$gamma_mean2
+          kappa_mean[[i]]=out[[i]]$kappa_mean
+          kappa_mean2[[i]]=out[[i]]$kappa_mean2
+          sigma_mean[[i]]=out[[i]]$sigma_mean
+          sigma_mean2[[i]]=out[[i]]$sigma_mean2
+          itercounter[[i]]=out[[i]]$iterationcounter[[1]]
+        }
+      }
+      
+      initalburnin <- 0
+      }
+      
+      cat("Burnin done, sampling...\n")
+      itercounter<-lapply(1:nchains,function(i)return(0))
+      kappa_mean<-gamma_mean<-sigma_mean<-list()
+      gamma_mean<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
+      kappa_mean<-lapply(1:length(kappa_startList),function(x)return(0))
+      
+      gamma_mean<-gamma_mean2<-lapply(1:nchains,function(i,x)return(x),x=gamma_mean)
+      kappa_mean<-kappa_mean2<-lapply(1:nchains,function(i,x)return(x),x=kappa_mean)
+      sigma_mean<-sigma_mean2<-lapply(1:nchains,function(i)return(0))
+      
+      out <- parallel::mclapply(1:nchains,function(i,y, Z, K, K_rk, gammaListList,
+                                                   #out <- lapply(1:4,function(i,y, Z, K, K_rk, gammaListList,
+                                                   kappaListList, ka_values,
+                                                   solverList, lin_constraint,
+                                                   sigmaListList, sigma_values,
+                                                   nIter, burnin,
+                                                   m, thr, 
+                                                   gamma_mean, gamma_mean2, 
+                                                   kappa_mean, kappa_mean2, 
+                                                   sigma_mean, sigma_mean2, 
+                                                   itercounter){
+        Sarim::sarim_gibbs_kappasamples(y=y, Z = Z, K = K, K_rank = K_rk, gamma = gammaListList[[i]],
+                                        ka_start = kappaListList[[i]], ka_values = ka_values,
+                                        solver = solverList, lin_constraint = constraintList,
+                                        sigma = sigmaListList[[i]], sigma_values = sigmavalues,
+                                        nIter = nIter, burnin = initialburnin, Ntrials = Ntrials,
+                                        m = m, thr = thr, 
+                                        gammamean = gamma_mean[[i]], 
+                                        gamma2mean = gamma_mean2[[i]], 
+                                        kappamean = kappa_mean[[i]], 
+                                        kappa2mean = kappa_mean2[[i]], 
+                                        sigmamean = sigma_mean[[i]], 
+                                        sigma2mean = sigma_mean2[[i]], 
+                                        iterationcounter = itercounter[[i]]
+        )},
+        y, Z, K, K_rk, gammaListList, kappaListList, kappaList,
+        solverList, constraintList, sigmaListList, sigmavalues,
+        nIter = ceiling(4000/nchains), burnin = 0,
+        m, thr, 
+        gamma_mean, gamma_mean2, 
+        kappa_mean, kappa_mean2,
+        sigma_mean, sigma_mean2,
+        itercounter,
+        mc.cores = ncores, mc.set.seed = TRUE, mc.silent=FALSE)
+      
     }
     
     if (family != "gaussian") {
@@ -250,7 +379,7 @@ sarim <- function(formula, data = list(), intercept = "FALSE", nIter = 1000L, bu
         {
           print(paste("Chain",i,"failed :("))
           gammaListList[[i]]<-gammaList  
-          kappaListList[[i]]<-kappaList
+          kappaListList[[i]]<-kappa_startList
           gamma_mean[[i]]<-gamma_mean2[[i]]<-lapply(1:length(gammaList),function(i)rep(0.0,length(gammaList[[i]])))
           kappa_mean[[i]]<-kappa_mean2[[i]]<-lapply(1:length(kappa_startList),function(x)return(0))
           itercounter[[i]]<-list(0)
